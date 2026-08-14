@@ -1,0 +1,20 @@
+{
+  "name": "frc-kickoff",
+  "private": true,
+  "workspaces": [
+    "apps/*",
+    "packages/*"
+  ],
+  "scripts": {
+    "dev": "bun --filter '*' dev",
+    "dev:server": "bun --cwd apps/server dev",
+    "dev:web": "bun --cwd apps/web dev",
+    "build": "bun --cwd apps/web build && bun --cwd apps/server build",
+    "db:generate": "bun --cwd packages/db generate",
+    "db:migrate": "bun --cwd packages/db migrate",
+    "typecheck": "bun --filter '*' typecheck"
+  },
+  "devDependencies": {
+    "typescript": "^5.7.0"
+  }
+}
