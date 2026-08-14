@@ -4,11 +4,13 @@ import { LinearSimulator } from "../features/sim/LinearSimulator";
 import { FlywheelSimulator } from "../features/sim/FlywheelSimulator";
 import { ClimberConfigurator } from "../features/sim/ClimberConfigurator";
 import { PartsAndVendors } from "../features/sim/PartsAndVendors";
+import { PinkArmSimulator } from "../features/sim/PinkArmSimulator";
 
 const TOOLS = [
   { id: "arm", label: "4-Bar / Arm" },
   { id: "slapdown", label: "Slapdown Intake" },
   { id: "linear", label: "Linear" },
+  { id: "pinkarm", label: "Pivot + Telescope" },
   { id: "shooter", label: "Shooter" },
   { id: "climber", label: "Climber Stages" },
   { id: "parts", label: "Parts & Vendors" },
@@ -52,6 +54,7 @@ export function SimulatePage() {
       {tool === "arm" && <ArmSimulator variant="arm" />}
       {tool === "slapdown" && <ArmSimulator variant="slapdown" />}
       {tool === "linear" && <LinearSimulator />}
+      {tool === "pinkarm" && <PinkArmSimulator />}
       {tool === "shooter" && <FlywheelSimulator />}
       {tool === "climber" && <ClimberConfigurator />}
       {tool === "parts" && <PartsAndVendors />}

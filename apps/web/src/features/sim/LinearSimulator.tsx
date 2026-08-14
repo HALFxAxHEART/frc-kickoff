@@ -3,22 +3,28 @@ import { useSearchParams } from "react-router-dom";
 import { simulateLinear, INCH_TO_M, LB_TO_KG, M_TO_INCH } from "@frckickoff/shared";
 import { MotorSelect } from "./MotorSelect";
 import { TraceChart } from "./TraceChart";
+import { ElevatorDiagram } from "./ElevatorDiagram";
 
 const LB_TO_N = 4.4482216153;
+
+type ActuationType = "cable" | "rack-pinion";
 
 export function LinearSimulator() {
   const [searchParams] = useSearchParams();
 
+  const [actuationType, setActuationType] = useState<ActuationType>("cable");
   const [motorId, setMotorId] = useState("neo");
   const [numMotors, setNumMotors] = useState(2);
   const [gearRatio, setGearRatio] = useState(12);
   const [spoolRadiusIn, setSpoolRadiusIn] = useState(0.75);
   const [riggingMultiplier, setRiggingMultiplier] = useState(2);
+  const [stageCount, setStageCount] = useState(2);
   const [carriageMassLb, setCarriageMassLb] = useState(15);
   const [travelIn, setTravelIn] = useState(48);
   const [angleFromVerticalDeg, setAngleFromVerticalDeg] = useState(0);
   const [voltage, setVoltage] = useState(12);
   const [efficiencyPct, setEfficiencyPct] = useState(85);
+  const [gamePieceRadiusIn, setGamePieceRadiusIn] = useState(2.5);
 
   const [useSprings, setUseSprings] = useState(false);
   const [springCount, setSpringCount] = useState(2);
@@ -31,6 +37,11 @@ export function LinearSimulator() {
     if (fromQuery) setTravelIn(Number(fromQuery));
   }, [searchParams]);
 
+  // Rack & pinion is a single rigid stage driven directly off the pinion — no cascade/continuous
+  // rigging to multiply speed, and nothing to telescope, regardless of what's in those fields.
+  const effectiveRiggingMultiplier = actuationType === "rack-pinion" ? 1 : riggingMultiplier;
+  const effectiveStageCount = actuationType === "rack-pinion" ? 1 : stageCount;
+
   const totalSpringForceN = useSprings ? springCount * springForceLbEach * LB_TO_N : 0;
   const springEngagedTravelM = (springFullEngagement ? travelIn : Math.min(springEngagedTravelIn, travelIn)) * INCH_TO_M;
 
@@ -41,7 +52,7 @@ export function LinearSimulator() {
         numMotors,
         gearRatio,
         spoolRadiusM: spoolRadiusIn * INCH_TO_M,
-        riggingMultiplier,
+        riggingMultiplier: effectiveRiggingMultiplier,
         carriageMassKg: carriageMassLb * LB_TO_KG,
         travelM: travelIn * INCH_TO_M,
         angleFromVerticalDeg,
@@ -51,7 +62,7 @@ export function LinearSimulator() {
         springEngagedTravelM,
       }),
     // eslint-disable-next-line react-hooks/exhaustive-deps
-    [motorId, numMotors, gearRatio, spoolRadiusIn, riggingMultiplier, carriageMassLb, travelIn, angleFromVerticalDeg, voltage, efficiencyPct, totalSpringForceN, springEngagedTravelM],
+    [motorId, numMotors, gearRatio, spoolRadiusIn, effectiveRiggingMultiplier, carriageMassLb, travelIn, angleFromVerticalDeg, voltage, efficiencyPct, totalSpringForceN, springEngagedTravelM],
   );
 
   const traceInInches = useMemo(() => result.trace.map((p) => ({ tSeconds: p.tSeconds, position: p.position * M_TO_INCH })), [result.trace]);
@@ -59,28 +70,43 @@ export function LinearSimulator() {
   return (
     <div>
       <p className="lede">
-        Sizes a linear mechanism — an elevator, a linear-slide intake, a climber stage — given a motor, gearing,
-        spool size, and rigging multiplier (how much a cascade/continuous rig multiplies carriage speed vs. spool
-        speed).
+        Sizes a linear mechanism — an elevator, a linear-slide intake, a climber stage — given a motor, gearing, and
+        how it's actuated.
       </p>
 
       <div className="two-col">
         <div className="card">
+          <div className="field" style={{ maxWidth: 280 }}>
+            <label>Actuation</label>
+            <select value={actuationType} onChange={(e) => setActuationType(e.target.value as ActuationType)}>
+              <option value="cable">Cable + Spool (cascade/continuous)</option>
+              <option value="rack-pinion">Rack &amp; Pinion</option>
+            </select>
+          </div>
+
           <MotorSelect motorId={motorId} numMotors={numMotors} onMotorChange={setMotorId} onCountChange={setNumMotors} />
           <div className="field-row">
             <div className="field">
-              <label>Gear ratio (motor:spool)</label>
+              <label>Gear ratio (motor:{actuationType === "rack-pinion" ? "pinion" : "spool"})</label>
               <input type="number" min={1} value={gearRatio} onChange={(e) => setGearRatio(Number(e.target.value))} />
             </div>
             <div className="field">
-              <label>Spool radius (in)</label>
+              <label>{actuationType === "rack-pinion" ? "Pinion radius (in)" : "Spool radius (in)"}</label>
               <input type="number" min={0.1} step={0.05} value={spoolRadiusIn} onChange={(e) => setSpoolRadiusIn(Number(e.target.value))} />
             </div>
-            <div className="field">
-              <label>Rigging multiplier</label>
-              <input type="number" min={1} max={4} value={riggingMultiplier} onChange={(e) => setRiggingMultiplier(Number(e.target.value))} />
-            </div>
+            {actuationType === "cable" && (
+              <div className="field">
+                <label>Rigging multiplier</label>
+                <input type="number" min={1} max={4} value={riggingMultiplier} onChange={(e) => setRiggingMultiplier(Number(e.target.value))} />
+              </div>
+            )}
           </div>
+          {actuationType === "cable" && (
+            <div className="field" style={{ maxWidth: 160 }}>
+              <label>Number of stages</label>
+              <input type="number" min={1} max={6} value={stageCount} onChange={(e) => setStageCount(Number(e.target.value))} />
+            </div>
+          )}
           <div className="field-row">
             <div className="field">
               <label>Carriage mass (lb)</label>
@@ -104,11 +130,16 @@ export function LinearSimulator() {
               <label>Efficiency %</label>
               <input type="number" min={1} max={100} value={efficiencyPct} onChange={(e) => setEfficiencyPct(Number(e.target.value))} />
             </div>
+            <div className="field">
+              <label>Game piece radius (in)</label>
+              <input type="number" min={0} step={0.5} value={gamePieceRadiusIn} onChange={(e) => setGamePieceRadiusIn(Number(e.target.value))} />
+            </div>
           </div>
           <p className="muted" style={{ fontSize: "0.78rem" }}>
-            0° from vertical = straight up (full gravity load), 90° = horizontal (no gravity component). Came here
-            from the Climber Stages tab? Its total travel figure drops straight into the Travel field via the link
-            there.
+            0° from vertical = straight up (full gravity load), 90° = horizontal (no gravity component).
+            {actuationType === "rack-pinion"
+              ? " Rack & pinion is always a single direct-drive stage — no rigging multiplier or stage count to set."
+              : " Came here from the Climber Stages tab? Its total travel figure drops straight into the Travel field via the link there."}
           </p>
 
           <label style={{ display: "flex", alignItems: "center", gap: 8, marginTop: 12, marginBottom: 8, width: "auto" }}>
@@ -163,6 +194,16 @@ export function LinearSimulator() {
             warn={!result.canHoldStatically}
           />
         </div>
+      </div>
+
+      <h2>What it looks like</h2>
+      <div className="card">
+        <ElevatorDiagram
+          travelM={travelIn * INCH_TO_M}
+          stageCount={effectiveStageCount}
+          angleFromVerticalDeg={angleFromVerticalDeg}
+          gamePieceRadiusM={gamePieceRadiusIn * INCH_TO_M}
+        />
       </div>
 
       <h2>Position over time</h2>

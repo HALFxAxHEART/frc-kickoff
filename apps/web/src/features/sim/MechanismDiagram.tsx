@@ -1,5 +1,6 @@
-import { useEffect, useMemo, useRef, useState } from "react";
+import { useMemo } from "react";
 import { solveFourBar, M_TO_INCH, type SimTracePoint } from "@frckickoff/shared";
+import { useScrubPlayback } from "./useScrubPlayback";
 
 interface FourBarLinks {
   groundLenM: number;
@@ -35,27 +36,7 @@ function effectorPoint(angleDeg: number, inputLenM: number, fourBar: FourBarLink
 }
 
 export function MechanismDiagram({ trace, inputLenM, fourBar, gamePieceRadiusM }: MechanismDiagramProps) {
-  const [scrub, setScrub] = useState(1); // 0..1 through the sweep
-  const [playing, setPlaying] = useState(false);
-  const directionRef = useRef(1);
-
-  useEffect(() => {
-    if (!playing) return;
-    const id = setInterval(() => {
-      setScrub((s) => {
-        let next = s + directionRef.current * 0.02;
-        if (next >= 1) {
-          next = 1;
-          directionRef.current = -1;
-        } else if (next <= 0) {
-          next = 0;
-          directionRef.current = 1;
-        }
-        return next;
-      });
-    }, 30);
-    return () => clearInterval(id);
-  }, [playing]);
+  const { scrub, playing, setPlaying, setScrubManually } = useScrubPlayback();
 
   const angles = useMemo(() => trace.map((p) => p.position), [trace]);
   const minAngle = Math.min(...angles);
@@ -151,10 +132,7 @@ export function MechanismDiagram({ trace, inputLenM, fourBar, gamePieceRadiusM }
           min={0}
           max={100}
           value={scrub * 100}
-          onChange={(e) => {
-            setPlaying(false);
-            setScrub(Number(e.target.value) / 100);
-          }}
+          onChange={(e) => setScrubManually(Number(e.target.value) / 100)}
           style={{ flex: 1 }}
         />
         <span className="muted" style={{ fontSize: "0.78rem", minWidth: 70, textAlign: "right" }}>
