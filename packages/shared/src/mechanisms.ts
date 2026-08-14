@@ -29,6 +29,57 @@ export interface MechanismCategory {
  */
 export const MECHANISM_LIBRARY: MechanismCategory[] = [
   {
+    id: "drivetrain",
+    label: "Drivetrain",
+    summary: "Usually the very first decision made at kickoff, often within hours — everything else (weight budget, wiring, defense strategy) builds on top of it. Not tied to a scoring action, so it's not tagged \"this year\" like the others, but it belongs at the top of your kickoff conversation.",
+    variants: [
+      {
+        id: "west-coast-tank",
+        label: "West Coast / tank drive",
+        description: "Fixed wheels on both sides, skid-steer to turn. The long-running default across most of FRC.",
+        pros: ["Simple, cheap, well-understood — tons of prior art and off-the-shelf kits", "Fewer moving parts than swerve, easier to maintain mid-event", "Lower weight and cost budget, leaves more for mechanisms"],
+        cons: ["Can't strafe — every reposition is a turn, which costs cycle time in tight spaces", "Loses head-on pushing matches against a well-built swerve bot"],
+      },
+      {
+        id: "swerve",
+        label: "Swerve drive",
+        description: "Each wheel module both drives and steers independently, so the robot can translate in any direction while facing any heading.",
+        pros: ["Full translational freedom — big cycle-time win when the field rewards repositioning without re-aiming", "Lets a turret-less shooter or intake stay aimed while moving"],
+        cons: ["Expensive and complex — four steerable modules, more motors/encoders/wiring, more that can fail", "Real programming investment (odometry, module offsets) before it's driveable well", "Needs real fabrication/CNC capability or a bought module kit — not a first-year team's rookie drivetrain"],
+      },
+      {
+        id: "mecanum",
+        label: "Mecanum",
+        description: "Angled roller wheels let the robot strafe without turning, using a fixed (non-steering) drivetrain.",
+        pros: ["Strafing capability without swerve's steering complexity", "Simpler control software than swerve"],
+        cons: ["Significant traction/pushing-power loss vs. tank or swerve — rollers reduce grip", "Rarely seen at the competitive end of FRC for this reason"],
+      },
+      {
+        id: "kit-drivebase",
+        label: "Kit-of-Parts / vendor drivebase",
+        description: "A pre-designed drivebase (e.g. the official 2026 KitBot, or a vendor kit like AndyMark's) built largely as documented rather than custom-designed.",
+        pros: ["Removes drivetrain as a build-season risk entirely — proven, documented, fast to assemble", "Frees mentor/lead time to focus on the scoring mechanism instead"],
+        cons: ["Less optimized for this year's specific field/game than a custom design", "Less of a learning opportunity for students who want the fabrication experience"],
+      },
+    ],
+    designQuestions: [
+      "Does this year's field reward strafing/omnidirectional movement, or is straight-line speed and pushing power what matters?",
+      "Does the team have the fabrication capability (and the mentor bandwidth) to build and debug swerve well, or would that time be better spent elsewhere?",
+      "How much of the weight and cost budget is the drivetrain allowed to take before it starves the scoring mechanism?",
+      "Is this a rebuild of last year's drivetrain, or does the new game genuinely demand a different one?",
+    ],
+    examples: [
+      {
+        label: "254's long swerve program",
+        note: "Team 254 has run swerve for years and is closely associated with Swerve Drive Specialties (a long-time sponsor) — a good reference point for what a mature, well-supported swerve program looks like, not a reason to assume swerve is right for every team.",
+      },
+      {
+        label: "254's fast 2013 drivetrain lock",
+        note: "In their kickoff-week blog, 254 documented picking a 32\"x24\" frame and 6-wheel drivetrain within the first few days via continuous mentor/student conversation rather than a long formal design review — speed of decision mattered as much as the decision itself.",
+      },
+    ],
+  },
+  {
     id: "intake",
     label: "Intakes",
     summary: "Whatever gets a game piece off the field and into the robot. Usually the single biggest lever on cycle time — a slow or unreliable intake caps everything downstream.",
@@ -145,6 +196,10 @@ export const MECHANISM_LIBRARY: MechanismCategory[] = [
     examples: [
       { label: "Two-wheel flywheels", note: "Became the standard high-goal shooter archetype in 2022 Rapid React — widely copied because of the speed/accuracy tradeoff being well understood." },
       { label: "Swerve + turret combo", note: "Teams like 254, 1678, and 2910 are frequently cited for pairing swerve drive with a vision-tracked turret to shoot while moving." },
+      {
+        label: "254's parallel shooter prototyping (2013 Ultimate Ascent)",
+        note: "On kickoff day, 254 immediately started prototyping three completely different shooter concepts at once — a radius design, a linear design, and a thrower-arm design — instead of debating on paper. They picked a winner from hardware, not a whiteboard. Worth copying even if your team is much smaller: prototype your top 2 shooter ideas in parallel for a few days before committing CAD time to either.",
+      },
     ],
   },
   {

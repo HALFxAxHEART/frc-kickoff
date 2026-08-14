@@ -4,6 +4,7 @@ import { useTRPC } from "../lib/trpc";
 
 const TILES = [
   { to: "/game", emoji: "📖", title: "Game Breakdown", desc: "Match timing, field zones, scoring table, and ranking points for the current game." },
+  { to: "/playbook", emoji: "🧭", title: "Kickoff & Build Season Playbook", desc: "A process grounded in how 1678 and 254 actually run their first weeks — game analysis, fast prototyping, and a build timeline." },
   { to: "/cycle-time", emoji: "⏱️", title: "Cycle Time Calculator", desc: "Model pickup vs. score time and see how many pieces and points a design can realistically put up." },
   { to: "/design-matrix", emoji: "📐", title: "Robot Design Matrix", desc: "Weigh robot concepts against your own criteria and let the numbers rank them." },
   { to: "/mechanisms", emoji: "⚙️", title: "Mechanism Library", desc: "Intakes, shooters, indexers, climbers — variants, tradeoffs, and real examples." },
