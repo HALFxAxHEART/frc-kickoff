@@ -1,4 +1,5 @@
 import { useMemo, useState } from "react";
+import { downsample } from "./downsample";
 
 interface TraceChartProps {
   trace: { tSeconds: number; position: number }[];
@@ -13,16 +14,6 @@ const PAD_LEFT = 52;
 const PAD_BOTTOM = 26;
 const PAD_TOP = 12;
 const PAD_RIGHT = 12;
-
-function downsample<T>(points: T[], maxPoints: number): T[] {
-  if (points.length <= maxPoints) return points;
-  const stride = Math.ceil(points.length / maxPoints);
-  const out: T[] = [];
-  for (let i = 0; i < points.length; i += stride) out.push(points[i]!);
-  const last = points[points.length - 1];
-  if (last && out[out.length - 1] !== last) out.push(last);
-  return out;
-}
 
 export function TraceChart({ trace, yLabel, yUnit, targetValue }: TraceChartProps) {
   const points = useMemo(() => downsample(trace, 150), [trace]);

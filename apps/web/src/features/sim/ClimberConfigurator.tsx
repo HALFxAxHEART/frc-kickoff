@@ -61,7 +61,9 @@ export function ClimberConfigurator() {
           <p className="muted" style={{ fontSize: "0.78rem" }}>
             Overlap is the bearing/guide engagement kept between adjacent stages at full extension — too little and
             the mechanism racks or binds. 3-6 inches is a common starting point for tube-in-tube designs; check
-            against your actual bearing/guide hardware.
+            against your actual bearing/guide hardware. Real nested tube stock comes in fixed sizes, not whatever
+            number you type here — check the <Link to="/simulate?tool=parts">Parts &amp; Vendors</Link> tab for
+            what's actually available before locking in a stage length.
           </p>
         </div>
 

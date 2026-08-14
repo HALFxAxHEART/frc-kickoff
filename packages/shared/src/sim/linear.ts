@@ -16,6 +16,10 @@ export interface LinearConfig {
   voltage: number;
   /** Gearbox/belt/pulley efficiency, 0-1. */
   efficiency: number;
+  /** Combined pull from constant-force springs (0 = not using any), along the direction of travel. */
+  springForceN: number;
+  /** How much of the travel the springs stay engaged for, starting from the bottom — real CF springs have a rated stroke and stop helping once fully extended. */
+  springEngagedTravelM: number;
 }
 
 export interface LinearSimResult {
@@ -23,7 +27,7 @@ export interface LinearSimResult {
   timeSeconds: number;
   maxVelocityMPerSec: number;
   peakCurrentA: number;
-  /** Positive = motor(s) can statically hold this load against gravity; negative = it can't (needs a brake/ratchet). */
+  /** Positive = motor(s) can statically hold this load against gravity (with spring assist, if any); negative = it can't (needs a brake/ratchet). */
   holdingForceMarginN: number;
   canHoldStatically: boolean;
   /** position = meters traveled, velocity = m/s. */
@@ -34,6 +38,11 @@ const GRAVITY = 9.80665;
 const MAX_SIM_SECONDS = 15;
 const DT = 0.005;
 const POSITION_TOLERANCE_M = 0.001;
+
+function springAssistN(config: LinearConfig, position: number): number {
+  if (config.springForceN <= 0) return 0;
+  return position <= config.springEngagedTravelM ? config.springForceN : 0;
+}
 
 export function simulateLinear(config: LinearConfig): LinearSimResult {
   const motor = getMotor(config.motorId);
@@ -52,7 +61,7 @@ export function simulateLinear(config: LinearConfig): LinearSimResult {
     const motorAngularVel = velocity * k;
     const rawTorque = motorTorqueNm(motor, motorAngularVel, config.voltage, config.numMotors);
     const driveForce = Math.max(0, rawTorque) * k * config.efficiency;
-    const netForce = driveForce - gravityForce;
+    const netForce = driveForce - gravityForce + springAssistN(config, position);
     const accel = netForce / config.carriageMassKg;
 
     velocity += accel * DT;
@@ -73,7 +82,7 @@ export function simulateLinear(config: LinearConfig): LinearSimResult {
   }
 
   const holdingCapacity = Math.max(0, motorTorqueNm(motor, 0, config.voltage, config.numMotors)) * k * config.efficiency;
-  const holdingForceMarginN = holdingCapacity - gravityForce;
+  const holdingForceMarginN = holdingCapacity - gravityForce + springAssistN(config, config.travelM);
 
   return {
     reachesTarget,

@@ -3,6 +3,7 @@ import { Link } from "react-router-dom";
 import { simulateArm, INCH_TO_M, LB_TO_KG, type ArmConfig } from "@frckickoff/shared";
 import { MotorSelect } from "./MotorSelect";
 import { TraceChart } from "./TraceChart";
+import { MechanismDiagram } from "./MechanismDiagram";
 
 interface Preset {
   gearRatio: number;
@@ -30,6 +31,13 @@ export function ArmSimulator({ variant }: { variant: "arm" | "slapdown" }) {
   const [voltage, setVoltage] = useState(12);
   const [efficiencyPct, setEfficiencyPct] = useState(85);
 
+  const [fourBarOn, setFourBarOn] = useState(false);
+  const [groundLenIn, setGroundLenIn] = useState(6);
+  const [groundAngleDeg, setGroundAngleDeg] = useState(0);
+  const [couplerLenIn, setCouplerLenIn] = useState(24);
+  const [outputLenIn, setOutputLenIn] = useState(6);
+  const [gamePieceRadiusIn, setGamePieceRadiusIn] = useState(2.5);
+
   const baseConfig: Omit<ArmConfig, "startAngleDeg" | "endAngleDeg"> = {
     motorId,
     numMotors,
@@ -52,11 +60,15 @@ export function ArmSimulator({ variant }: { variant: "arm" | "slapdown" }) {
     [variant, motorId, numMotors, gearRatio, armLengthIn, armMassLb, loadMassLb, startAngleDeg, endAngleDeg, voltage, efficiencyPct],
   );
 
+  const fourBarLinks = fourBarOn
+    ? { groundLenM: groundLenIn * INCH_TO_M, groundAngleDeg, couplerLenM: couplerLenIn * INCH_TO_M, outputLenM: outputLenIn * INCH_TO_M }
+    : undefined;
+
   return (
     <div>
       <p className="lede">
         {variant === "arm"
-          ? "Sizes a pivoting arm/4-bar mechanism — how fast it swings from one angle to another, and whether the motor can actually hold it up against gravity once it's there."
+          ? "Sizes a pivoting arm or true 4-bar linkage — how fast it swings from one angle to another, whether the motor can hold it up against gravity, and what it actually looks like doing it."
           : "Sizes a slapdown-style deploy/retract intake — since gravity helps one direction and fights the other, both are simulated. Feed the times below straight into the Cycle Time Calculator's pickup/travel fields."}
       </p>
 
@@ -79,7 +91,7 @@ export function ArmSimulator({ variant }: { variant: "arm" | "slapdown" }) {
           </div>
           <div className="field-row">
             <div className="field">
-              <label>Arm length (in)</label>
+              <label>{fourBarOn ? "Input link length (in)" : "Arm length (in)"}</label>
               <input type="number" min={0} value={armLengthIn} onChange={(e) => setArmLengthIn(Number(e.target.value))} />
             </div>
             <div className="field">
@@ -103,8 +115,47 @@ export function ArmSimulator({ variant }: { variant: "arm" | "slapdown" }) {
           </div>
           <p className="muted" style={{ fontSize: "0.78rem" }}>
             Arm modeled as a uniform rod (moment of inertia = mass·length²/3) plus an optional point load at the tip.
-            0° is horizontal, 90° is straight up.
+            0° is horizontal, 90° is straight up. Dynamics (speed/time/current) are always driven by this link —
+            4-bar mode below only adds the kinematics of a second pivoting link for the diagram, not separate mass.
           </p>
+
+          <label style={{ display: "flex", alignItems: "center", gap: 8, marginTop: 12, marginBottom: 8, width: "auto" }}>
+            <input type="checkbox" style={{ width: "auto" }} checked={fourBarOn} onChange={(e) => setFourBarOn(e.target.checked)} />
+            Model as a true 4-bar linkage (independent pivots, keeps end-effector orientation)
+          </label>
+          {fourBarOn && (
+            <>
+              <div className="field-row">
+                <div className="field">
+                  <label>Frame pivot spacing (in)</label>
+                  <input type="number" min={0.5} value={groundLenIn} onChange={(e) => setGroundLenIn(Number(e.target.value))} />
+                </div>
+                <div className="field">
+                  <label>Frame angle (° from horizontal)</label>
+                  <input type="number" value={groundAngleDeg} onChange={(e) => setGroundAngleDeg(Number(e.target.value))} />
+                </div>
+              </div>
+              <div className="field-row">
+                <div className="field">
+                  <label>Coupler link length (in)</label>
+                  <input type="number" min={0.5} value={couplerLenIn} onChange={(e) => setCouplerLenIn(Number(e.target.value))} />
+                </div>
+                <div className="field">
+                  <label>Output link length (in)</label>
+                  <input type="number" min={0.5} value={outputLenIn} onChange={(e) => setOutputLenIn(Number(e.target.value))} />
+                </div>
+              </div>
+              <p className="muted" style={{ fontSize: "0.78rem" }}>
+                Set coupler = frame spacing and output = input length for a parallelogram 4-bar — that's the config
+                that keeps a held game piece level throughout the swing, which is usually the point of using a 4-bar
+                at all.
+              </p>
+            </>
+          )}
+          <div className="field" style={{ maxWidth: 220 }}>
+            <label>Game piece radius (in)</label>
+            <input type="number" min={0} step={0.5} value={gamePieceRadiusIn} onChange={(e) => setGamePieceRadiusIn(Number(e.target.value))} />
+          </div>
         </div>
 
         <div>
@@ -119,6 +170,11 @@ export function ArmSimulator({ variant }: { variant: "arm" | "slapdown" }) {
             </div>
           )}
         </div>
+      </div>
+
+      <h2>What it looks like</h2>
+      <div className="card">
+        <MechanismDiagram trace={forward.trace} inputLenM={armLengthIn * INCH_TO_M} fourBar={fourBarLinks} gamePieceRadiusM={gamePieceRadiusIn * INCH_TO_M} />
       </div>
 
       <h2>Position over time</h2>

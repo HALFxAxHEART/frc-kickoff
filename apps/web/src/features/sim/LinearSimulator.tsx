@@ -4,6 +4,8 @@ import { simulateLinear, INCH_TO_M, LB_TO_KG, M_TO_INCH } from "@frckickoff/shar
 import { MotorSelect } from "./MotorSelect";
 import { TraceChart } from "./TraceChart";
 
+const LB_TO_N = 4.4482216153;
+
 export function LinearSimulator() {
   const [searchParams] = useSearchParams();
 
@@ -18,10 +20,19 @@ export function LinearSimulator() {
   const [voltage, setVoltage] = useState(12);
   const [efficiencyPct, setEfficiencyPct] = useState(85);
 
+  const [useSprings, setUseSprings] = useState(false);
+  const [springCount, setSpringCount] = useState(2);
+  const [springForceLbEach, setSpringForceLbEach] = useState(10);
+  const [springFullEngagement, setSpringFullEngagement] = useState(true);
+  const [springEngagedTravelIn, setSpringEngagedTravelIn] = useState(24);
+
   useEffect(() => {
     const fromQuery = searchParams.get("travelIn");
     if (fromQuery) setTravelIn(Number(fromQuery));
   }, [searchParams]);
+
+  const totalSpringForceN = useSprings ? springCount * springForceLbEach * LB_TO_N : 0;
+  const springEngagedTravelM = (springFullEngagement ? travelIn : Math.min(springEngagedTravelIn, travelIn)) * INCH_TO_M;
 
   const result = useMemo(
     () =>
@@ -36,8 +47,11 @@ export function LinearSimulator() {
         angleFromVerticalDeg,
         voltage,
         efficiency: efficiencyPct / 100,
+        springForceN: totalSpringForceN,
+        springEngagedTravelM,
       }),
-    [motorId, numMotors, gearRatio, spoolRadiusIn, riggingMultiplier, carriageMassLb, travelIn, angleFromVerticalDeg, voltage, efficiencyPct],
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+    [motorId, numMotors, gearRatio, spoolRadiusIn, riggingMultiplier, carriageMassLb, travelIn, angleFromVerticalDeg, voltage, efficiencyPct, totalSpringForceN, springEngagedTravelM],
   );
 
   const traceInInches = useMemo(() => result.trace.map((p) => ({ tSeconds: p.tSeconds, position: p.position * M_TO_INCH })), [result.trace]);
@@ -96,6 +110,40 @@ export function LinearSimulator() {
             from the Climber Stages tab? Its total travel figure drops straight into the Travel field via the link
             there.
           </p>
+
+          <label style={{ display: "flex", alignItems: "center", gap: 8, marginTop: 12, marginBottom: 8, width: "auto" }}>
+            <input type="checkbox" style={{ width: "auto" }} checked={useSprings} onChange={(e) => setUseSprings(e.target.checked)} />
+            Using constant-force springs to counterbalance?
+          </label>
+          {useSprings && (
+            <>
+              <div className="field-row">
+                <div className="field">
+                  <label>Springs</label>
+                  <input type="number" min={1} value={springCount} onChange={(e) => setSpringCount(Number(e.target.value))} />
+                </div>
+                <div className="field">
+                  <label>Force per spring (lb)</label>
+                  <input type="number" min={0} value={springForceLbEach} onChange={(e) => setSpringForceLbEach(Number(e.target.value))} />
+                </div>
+              </div>
+              <label style={{ display: "flex", alignItems: "center", gap: 8, marginBottom: 8, width: "auto" }}>
+                <input type="checkbox" style={{ width: "auto" }} checked={springFullEngagement} onChange={(e) => setSpringFullEngagement(e.target.checked)} />
+                Engaged for the full travel
+              </label>
+              {!springFullEngagement && (
+                <div className="field" style={{ maxWidth: 220 }}>
+                  <label>Engaged for the first (in)</label>
+                  <input type="number" min={0} max={travelIn} value={springEngagedTravelIn} onChange={(e) => setSpringEngagedTravelIn(Number(e.target.value))} />
+                </div>
+              )}
+              <p className="muted" style={{ fontSize: "0.78rem" }}>
+                Modeled as a constant force over its engaged stroke, then zero once fully extended — real CF springs
+                are rated for a specific stroke length; check the spring's spec before assuming it covers your full
+                travel.
+              </p>
+            </>
+          )}
         </div>
 
         <div className="card">
@@ -103,7 +151,7 @@ export function LinearSimulator() {
           {!result.reachesTarget && (
             <p style={{ color: "var(--status-critical)", fontSize: "0.85rem" }}>
               Doesn't reach full travel within 15s — this combo can't overcome the load here. Increase gear
-              reduction, add motors, use a smaller spool, or reduce mass.
+              reduction, add motors, use a smaller spool, reduce mass, or add spring assist.
             </p>
           )}
           <Stat label="Time to full extension" value={`${result.timeSeconds.toFixed(2)}s`} accent />
