@@ -20,7 +20,7 @@ const PX_PER_METER = 160;
 /**
  * Illustrative, not dimensionally precise — draws stages as evenly-spaced seams in a single
  * extending column rather than solving real nested-tube overlap geometry (that's what the
- * Climber Stages tab is for). Good enough to show "does this go up smoothly and how far."
+ * Climber / Elevator Stages tab is for). Good enough to show "does this go up smoothly and how far."
  */
 export function ElevatorDiagram({ travelM, stageCount, angleFromVerticalDeg, gamePieceRadiusM }: ElevatorDiagramProps) {
   const { scrub, playing, setPlaying, setScrubManually } = useScrubPlayback();
@@ -99,7 +99,7 @@ export function ElevatorDiagram({ travelM, stageCount, angleFromVerticalDeg, gam
       </div>
       <p className="muted" style={{ fontSize: "0.78rem" }}>
         Illustrative, not to scale — stage seams are evenly spaced here for a quick look at how it moves. For real
-        per-stage lengths and overlap, use the Climber Stages tab.
+        per-stage lengths and overlap, use the Climber / Elevator Stages tab.
       </p>
     </div>
   );

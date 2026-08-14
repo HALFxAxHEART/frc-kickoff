@@ -12,7 +12,7 @@ const TOOLS = [
   { id: "linear", label: "Linear" },
   { id: "pinkarm", label: "Pivot + Telescope" },
   { id: "shooter", label: "Shooter" },
-  { id: "climber", label: "Climber Stages" },
+  { id: "climber", label: "Climber / Elevator Stages" },
   { id: "parts", label: "Parts & Vendors" },
 ] as const;
 
@@ -20,9 +20,9 @@ type ToolId = (typeof TOOLS)[number]["id"];
 
 export function SimulatePage() {
   // The URL is the single source of truth for which tab is active — no local state to keep in
-  // sync. The Climber Stages tab links here with a new `?tool=` param without unmounting this
-  // page (same route); deriving `tool` straight from searchParams on every render means that
-  // Link always takes effect immediately, with no risk of stale local state.
+  // sync. The Climber / Elevator Stages tab links here with a new `?tool=` param without
+  // unmounting this page (same route); deriving `tool` straight from searchParams on every
+  // render means that Link always takes effect immediately, with no risk of stale local state.
   const [searchParams, setSearchParams] = useSearchParams();
   const fromQuery = searchParams.get("tool") as ToolId | null;
   const tool: ToolId = fromQuery && TOOLS.some((t) => t.id === fromQuery) ? fromQuery : "arm";

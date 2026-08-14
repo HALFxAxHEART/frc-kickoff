@@ -75,10 +75,22 @@ export const VENDOR_CATEGORIES: VendorCategory[] = [
   {
     id: "tube-stock",
     label: "Tube Stock / Extrusion",
-    note: "Nested tube sizes for elevator/climber stages — feed your chosen sizes into the Climber Stages tab.",
+    note: "Nested tube sizes for elevator/climber stages — feed your chosen sizes into the Climber / Elevator Stages tab.",
     links: [
       { vendor: "WCP", url: "https://wcproducts.com/collections/systems-structure/stock" },
       { vendor: "AndyMark", url: "https://andymark.com/collections/extrusion-structure" },
+    ],
+  },
+  {
+    id: "elevator-kits",
+    label: "Elevator Kits & Bearing Blocks",
+    note: "Complete elevator systems and the corner/bearing hardware that lets stages slide. Two different approaches — WCP's Telescope nests nested tube sizes directly; Cascade-style kits (WCP, SDS, REV) use one uniform tube size riding on external bearing blocks instead.",
+    links: [
+      { vendor: "WCP GreyT Telescope", url: "https://wcproducts.com/products/greyt-telescope" },
+      { vendor: "WCP GreyT Cascade Elevator", url: "https://wcproducts.com/products/greyt-cascade-elevator" },
+      { vendor: "WCP Elevator Bearing Block", url: "https://wcproducts.com/products/wcp-0199" },
+      { vendor: "SDS Billet Elevator Bearing Block", url: "https://www.swervedrivespecialties.com/products/billet-elevator-bearing-block" },
+      { vendor: "AndyMark (SDS block kits)", url: "https://www.andymark.com/products/sds-elevator-corner-kits" },
     ],
   },
   {

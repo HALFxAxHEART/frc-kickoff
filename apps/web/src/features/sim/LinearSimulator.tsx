@@ -153,7 +153,7 @@ export function LinearSimulator() {
             0° from vertical = straight up (full gravity load), 90° = horizontal (no gravity component).
             {actuationType === "rack-pinion"
               ? " Rack & pinion is always a single direct-drive stage — no rigging multiplier or stage count to set."
-              : " Came here from the Climber Stages tab? Its total travel figure drops straight into the Travel field via the link there."}{" "}
+              : " Came here from the Climber / Elevator Stages tab? Its total travel figure drops straight into the Travel field via the link there."}{" "}
             Cable and belt both drive a cascade/continuous multi-stage rig the same way physics-wise — pick
             whichever matches your actual mechanism.
           </p>
