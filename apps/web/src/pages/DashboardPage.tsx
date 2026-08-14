@@ -6,6 +6,7 @@ const TILES = [
   { to: "/game", emoji: "📖", title: "Game Breakdown", desc: "Match timing, field zones, scoring table, and ranking points for the current game." },
   { to: "/playbook", emoji: "🧭", title: "Kickoff & Build Season Playbook", desc: "A process grounded in how 1678 and 254 actually run their first weeks — game analysis, fast prototyping, and a build timeline." },
   { to: "/cycle-time", emoji: "⏱️", title: "Cycle Time Calculator", desc: "Model pickup vs. score time and see how many pieces and points a design can realistically put up." },
+  { to: "/simulate", emoji: "🧮", title: "Simulate", desc: "Recalc-style physics calculators: 4-bar/arm, slapdown, linear, shooter, and a climber stage configurator." },
   { to: "/design-matrix", emoji: "📐", title: "Robot Design Matrix", desc: "Weigh robot concepts against your own criteria and let the numbers rank them." },
   { to: "/mechanisms", emoji: "⚙️", title: "Mechanism Library", desc: "Intakes, shooters, indexers, climbers — variants, tradeoffs, and real examples." },
   { to: "/concepts", emoji: "🗂️", title: "Concepts", desc: "Save named robot concepts that bundle a design-matrix result and cycle-time scenarios." },

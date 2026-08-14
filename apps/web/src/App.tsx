@@ -6,12 +6,14 @@ import { DesignMatrixPage } from "./pages/DesignMatrixPage";
 import { MechanismLibraryPage } from "./pages/MechanismLibraryPage";
 import { ConceptsPage } from "./pages/ConceptsPage";
 import { PlaybookPage } from "./pages/PlaybookPage";
+import { SimulatePage } from "./pages/SimulatePage";
 
 const NAV_LINKS = [
   { to: "/", label: "Dashboard", end: true },
   { to: "/game", label: "Game Breakdown" },
   { to: "/playbook", label: "Playbook" },
   { to: "/cycle-time", label: "Cycle Time" },
+  { to: "/simulate", label: "Simulate" },
   { to: "/design-matrix", label: "Design Matrix" },
   { to: "/mechanisms", label: "Mechanisms" },
   { to: "/concepts", label: "Concepts" },
@@ -41,6 +43,7 @@ export function App() {
           <Route path="/game" element={<GameBreakdownPage />} />
           <Route path="/playbook" element={<PlaybookPage />} />
           <Route path="/cycle-time" element={<CycleTimePage />} />
+          <Route path="/simulate" element={<SimulatePage />} />
           <Route path="/design-matrix" element={<DesignMatrixPage />} />
           <Route path="/mechanisms" element={<MechanismLibraryPage />} />
           <Route path="/concepts" element={<ConceptsPage />} />
