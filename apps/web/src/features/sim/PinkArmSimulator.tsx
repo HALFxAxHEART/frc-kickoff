@@ -5,6 +5,10 @@ import { TraceChart } from "./TraceChart";
 import { PinkArmDiagram } from "./PinkArmDiagram";
 
 export function PinkArmSimulator() {
+  // 0 = coaxial telescoping (a true "pink arm"). 90 = an elevator rigidly mounted
+  // perpendicular on the end of a fixed-length pivoting arm, rotating together with it.
+  const [mountAngleOffsetDeg, setMountAngleOffsetDeg] = useState(0);
+
   // Pivot axis
   const [pivotMotorId, setPivotMotorId] = useState("neo");
   const [pivotNumMotors, setPivotNumMotors] = useState(2);
@@ -71,10 +75,23 @@ export function PinkArmSimulator() {
   return (
     <div>
       <p className="lede">
-        A "pink arm" — one tube that pivots AND telescopes at once, rather than a fixed-length arm or a purely
-        linear slide. The term traces to Team 233's 2005/2011 robots; 1678's 2022 climber is another commonly-cited
-        example. Modeled here as two independently-driven axes (pivot and extension) — real hardware sometimes
-        profiles them together, which this doesn't simulate, but sizing each axis is still the first real question.
+        Combines a pivot and a linear extension into one mechanism — two independently-driven axes (real hardware
+        sometimes profiles them together, which this doesn't simulate, but sizing each axis is still the first real
+        question).
+      </p>
+
+      <div className="field" style={{ maxWidth: 420, marginBottom: 16 }}>
+        <label>Configuration</label>
+        <select value={mountAngleOffsetDeg} onChange={(e) => setMountAngleOffsetDeg(Number(e.target.value))}>
+          <option value={0}>Telescoping — coaxial (a "pink arm")</option>
+          <option value={90}>Elevator mounted on the arm's tip (perpendicular, rotates with it)</option>
+          <option value={45}>Angled mount (45°)</option>
+        </select>
+      </div>
+      <p className="muted" style={{ fontSize: "0.82rem", marginTop: -8, marginBottom: 16 }}>
+        {mountAngleOffsetDeg === 0
+          ? `"Pink arm" — one tube that pivots and telescopes along its own axis at once. The term traces to Team 233's 2005/2011 robots; 1678's 2022 climber is another commonly-cited example.`
+          : "A separate linear stage rigidly mounted at the end of a fixed-length pivoting arm, extending at a fixed angle relative to the arm and rotating together with it as the arm swings."}
       </p>
 
       <div className="two-col">
@@ -215,6 +232,7 @@ export function PinkArmSimulator() {
           pivotTrace={pivotResult.trace}
           extendTrace={extendResult.trace}
           baseLengthM={baseLengthIn * INCH_TO_M}
+          mountAngleOffsetDeg={mountAngleOffsetDeg}
           gamePieceRadiusM={gamePieceRadiusIn * INCH_TO_M}
         />
       </div>

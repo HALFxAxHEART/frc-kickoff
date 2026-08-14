@@ -7,7 +7,18 @@ import { ElevatorDiagram } from "./ElevatorDiagram";
 
 const LB_TO_N = 4.4482216153;
 
-type ActuationType = "cable" | "rack-pinion";
+type ActuationType = "cable" | "belt" | "rack-pinion";
+
+const RADIUS_LABEL: Record<ActuationType, string> = {
+  cable: "Spool radius (in)",
+  belt: "Pulley pitch radius (in)",
+  "rack-pinion": "Pinion radius (in)",
+};
+const GEAR_TARGET_LABEL: Record<ActuationType, string> = {
+  cable: "spool",
+  belt: "pulley",
+  "rack-pinion": "pinion",
+};
 
 export function LinearSimulator() {
   const [searchParams] = useSearchParams();
@@ -39,8 +50,10 @@ export function LinearSimulator() {
 
   // Rack & pinion is a single rigid stage driven directly off the pinion — no cascade/continuous
   // rigging to multiply speed, and nothing to telescope, regardless of what's in those fields.
-  const effectiveRiggingMultiplier = actuationType === "rack-pinion" ? 1 : riggingMultiplier;
-  const effectiveStageCount = actuationType === "rack-pinion" ? 1 : stageCount;
+  // Cable and belt can both drive a cascade/continuous multi-stage rig identically.
+  const isMultiStageCapable = actuationType !== "rack-pinion";
+  const effectiveRiggingMultiplier = isMultiStageCapable ? riggingMultiplier : 1;
+  const effectiveStageCount = isMultiStageCapable ? stageCount : 1;
 
   const totalSpringForceN = useSprings ? springCount * springForceLbEach * LB_TO_N : 0;
   const springEngagedTravelM = (springFullEngagement ? travelIn : Math.min(springEngagedTravelIn, travelIn)) * INCH_TO_M;
@@ -80,6 +93,7 @@ export function LinearSimulator() {
             <label>Actuation</label>
             <select value={actuationType} onChange={(e) => setActuationType(e.target.value as ActuationType)}>
               <option value="cable">Cable + Spool (cascade/continuous)</option>
+              <option value="belt">Belt + Pulley (cascade/continuous)</option>
               <option value="rack-pinion">Rack &amp; Pinion</option>
             </select>
           </div>
@@ -87,21 +101,21 @@ export function LinearSimulator() {
           <MotorSelect motorId={motorId} numMotors={numMotors} onMotorChange={setMotorId} onCountChange={setNumMotors} />
           <div className="field-row">
             <div className="field">
-              <label>Gear ratio (motor:{actuationType === "rack-pinion" ? "pinion" : "spool"})</label>
+              <label>Gear ratio (motor:{GEAR_TARGET_LABEL[actuationType]})</label>
               <input type="number" min={1} value={gearRatio} onChange={(e) => setGearRatio(Number(e.target.value))} />
             </div>
             <div className="field">
-              <label>{actuationType === "rack-pinion" ? "Pinion radius (in)" : "Spool radius (in)"}</label>
+              <label>{RADIUS_LABEL[actuationType]}</label>
               <input type="number" min={0.1} step={0.05} value={spoolRadiusIn} onChange={(e) => setSpoolRadiusIn(Number(e.target.value))} />
             </div>
-            {actuationType === "cable" && (
+            {isMultiStageCapable && (
               <div className="field">
                 <label>Rigging multiplier</label>
                 <input type="number" min={1} max={4} value={riggingMultiplier} onChange={(e) => setRiggingMultiplier(Number(e.target.value))} />
               </div>
             )}
           </div>
-          {actuationType === "cable" && (
+          {isMultiStageCapable && (
             <div className="field" style={{ maxWidth: 160 }}>
               <label>Number of stages</label>
               <input type="number" min={1} max={6} value={stageCount} onChange={(e) => setStageCount(Number(e.target.value))} />
@@ -139,7 +153,9 @@ export function LinearSimulator() {
             0° from vertical = straight up (full gravity load), 90° = horizontal (no gravity component).
             {actuationType === "rack-pinion"
               ? " Rack & pinion is always a single direct-drive stage — no rigging multiplier or stage count to set."
-              : " Came here from the Climber Stages tab? Its total travel figure drops straight into the Travel field via the link there."}
+              : " Came here from the Climber Stages tab? Its total travel figure drops straight into the Travel field via the link there."}{" "}
+            Cable and belt both drive a cascade/continuous multi-stage rig the same way physics-wise — pick
+            whichever matches your actual mechanism.
           </p>
 
           <label style={{ display: "flex", alignItems: "center", gap: 8, marginTop: 12, marginBottom: 8, width: "auto" }}>
