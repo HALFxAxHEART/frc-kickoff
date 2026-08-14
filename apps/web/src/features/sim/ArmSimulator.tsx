@@ -31,11 +31,18 @@ export function ArmSimulator({ variant }: { variant: "arm" | "slapdown" }) {
   const [voltage, setVoltage] = useState(12);
   const [efficiencyPct, setEfficiencyPct] = useState(85);
 
-  const [fourBarOn, setFourBarOn] = useState(false);
+  // Defaults to true 4-bar mode for the "arm" tab (that's what it's named for) as a
+  // parallelogram — coupler length = ground length, output length = input length — since
+  // that's the configuration that actually keeps a held game piece level through the swing,
+  // and it's the clearest possible first view of "this is a real 4-bar, not a simple pivot."
+  const [fourBarOn, setFourBarOn] = useState(variant === "arm");
   const [groundLenIn, setGroundLenIn] = useState(6);
-  const [groundAngleDeg, setGroundAngleDeg] = useState(0);
-  const [couplerLenIn, setCouplerLenIn] = useState(24);
-  const [outputLenIn, setOutputLenIn] = useState(6);
+  // -30° (not 0) so a parallelogram's input link doesn't start exactly aligned with the ground
+  // link — that exact alignment is a real kinematic singularity (the linkage folds flat/
+  // collinear there), which is physically correct but looks broken as a default view.
+  const [groundAngleDeg, setGroundAngleDeg] = useState(-30);
+  const [couplerLenIn, setCouplerLenIn] = useState(6);
+  const [outputLenIn, setOutputLenIn] = useState(preset.armLengthIn);
   const [gamePieceRadiusIn, setGamePieceRadiusIn] = useState(2.5);
 
   const baseConfig: Omit<ArmConfig, "startAngleDeg" | "endAngleDeg"> = {

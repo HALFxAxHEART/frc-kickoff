@@ -1,4 +1,3 @@
-import { useEffect, useState } from "react";
 import { useSearchParams } from "react-router-dom";
 import { ArmSimulator } from "../features/sim/ArmSimulator";
 import { LinearSimulator } from "../features/sim/LinearSimulator";
@@ -18,17 +17,21 @@ const TOOLS = [
 type ToolId = (typeof TOOLS)[number]["id"];
 
 export function SimulatePage() {
-  const [searchParams] = useSearchParams();
+  // The URL is the single source of truth for which tab is active — no local state to keep in
+  // sync. The Climber Stages tab links here with a new `?tool=` param without unmounting this
+  // page (same route); deriving `tool` straight from searchParams on every render means that
+  // Link always takes effect immediately, with no risk of stale local state.
+  const [searchParams, setSearchParams] = useSearchParams();
   const fromQuery = searchParams.get("tool") as ToolId | null;
-  const [tool, setTool] = useState<ToolId>(fromQuery && TOOLS.some((t) => t.id === fromQuery) ? fromQuery : "arm");
+  const tool: ToolId = fromQuery && TOOLS.some((t) => t.id === fromQuery) ? fromQuery : "arm";
 
-  // The Climber Stages tab links here with a new `tool` query param without unmounting this
-  // page (same route) — the useState initializer above only runs once, so without this effect
-  // clicking that link updates the URL but the visible tab never actually switches.
-  useEffect(() => {
-    if (fromQuery && TOOLS.some((t) => t.id === fromQuery)) setTool(fromQuery);
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [fromQuery]);
+  function selectTool(id: ToolId) {
+    setSearchParams((prev) => {
+      const next = new URLSearchParams(prev);
+      next.set("tool", id);
+      return next;
+    });
+  }
 
   return (
     <div>
@@ -40,7 +43,7 @@ export function SimulatePage() {
 
       <div className="tabs">
         {TOOLS.map((t) => (
-          <button key={t.id} className={t.id === tool ? "active" : ""} onClick={() => setTool(t.id)}>
+          <button key={t.id} className={t.id === tool ? "active" : ""} onClick={() => selectTool(t.id)}>
             {t.label}
           </button>
         ))}
