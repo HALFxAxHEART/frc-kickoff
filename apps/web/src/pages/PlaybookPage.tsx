@@ -87,6 +87,12 @@ export function PlaybookPage() {
         The <Link to="/game">Game Breakdown</Link> page on this site is laid out to answer most of this directly —
         use it as your worksheet.
       </p>
+      <p>
+        For a concrete example of this in practice, 254's 2014 kickoff-day blog post walks through exactly this
+        sequence: a full-team read-through of the game manual, a list of clarifying questions drafted for FIRST, and
+        a strategy scoring spreadsheet ranking scoring actions by value — all before lunch, with prototyping starting
+        that same afternoon.
+      </p>
 
       <h2>2. First Days — Prototype, Don't Debate</h2>
       <p>
@@ -147,20 +153,82 @@ export function PlaybookPage() {
         </tbody>
       </table>
 
-      <h2>Further Resources</h2>
+      <h2>5. Organize the Team</h2>
+      <p>
+        Kickoff weekend is also when it's easiest to sort out who's doing what — before build season pressure makes
+        it awkward to renegotiate. 1678's real subteam breakdown is a solid model to adapt for a team of almost any
+        size (scale it down to "one person wearing this hat" if you're small, rather than skipping it):
+      </p>
       <div className="card-grid">
         <div className="card">
-          <h3>Citrus Circuits Scouting Whitepapers</h3>
+          <h3>Hardware Design</h3>
+          <p className="muted" style={{ fontSize: "0.86rem" }}>CAD, mechanism design, prototyping decisions.</p>
+        </div>
+        <div className="card">
+          <h3>Hardware Fabrication</h3>
+          <p className="muted" style={{ fontSize: "0.86rem" }}>Machining, assembly, turning CAD into real parts.</p>
+        </div>
+        <div className="card">
+          <h3>Hardware Electrical</h3>
+          <p className="muted" style={{ fontSize: "0.86rem" }}>Wiring, power distribution, pneumatics, sensors.</p>
+        </div>
+        <div className="card">
+          <h3>Software (Robot)</h3>
+          <p className="muted" style={{ fontSize: "0.86rem" }}>Drivetrain code, mechanism control, autonomous.</p>
+        </div>
+        <div className="card">
+          <h3>Software (Scouting)</h3>
+          <p className="muted" style={{ fontSize: "0.86rem" }}>Match data collection and analysis tooling — this is the subteam behind 1678's well-known scouting system.</p>
+        </div>
+        <div className="card">
+          <h3>Business &amp; Media</h3>
+          <p className="muted" style={{ fontSize: "0.86rem" }}>Sponsorship, outreach, documentation, awards.</p>
+        </div>
+        <div className="card">
+          <h3>Strategy <span className="badge" style={{ marginLeft: 4 }}>secondary</span></h3>
+          <p className="muted" style={{ fontSize: "0.86rem" }}>Game analysis and match strategy — opt-in on top of a primary subteam above, at 1678.</p>
+        </div>
+        <div className="card">
+          <h3>Impact Award <span className="badge" style={{ marginLeft: 4 }}>secondary</span></h3>
+          <p className="muted" style={{ fontSize: "0.86rem" }}>FIRST's top team award — community impact, not just robot performance.</p>
+        </div>
+      </div>
+      <p className="muted" style={{ fontSize: "0.8rem" }}>
+        Source: <a href="https://www.citruscircuits.org/subteams" target="_blank" rel="noreferrer">citruscircuits.org/subteams</a>.
+        Strategy and Impact Award are secondary/opt-in subteams at 1678, layered on top of a primary assignment above
+        — not everyone needs one, but it's worth deciding on purpose rather than by default.
+      </p>
+
+      <h2>Further Resources</h2>
+
+      <h3>From 1678 Citrus Circuits</h3>
+      <div className="card-grid">
+        <div className="card">
+          <h3>Scouting Whitepapers</h3>
           <p className="muted" style={{ fontSize: "0.86rem" }}>
-            1678 publishes a technical whitepaper on their scouting system every year — the process and lessons
-            learned generalize well beyond their specific software.
+            A technical whitepaper on their scouting system every year — the process and lessons learned generalize
+            well beyond their specific software.
           </p>
           <a href="https://www.citruscircuits.org/scouting" target="_blank" rel="noreferrer">
             citruscircuits.org/scouting
           </a>
         </div>
         <div className="card">
-          <h3>Citrus Circuits Training Resources</h3>
+          <h3>Strategic Design Workshop</h3>
+          <p className="muted" style={{ fontSize: "0.86rem" }}>
+            1678's own Strategic Design deck — how they run game analysis before mechanism design, straight from
+            their Fall Workshop Series.
+          </p>
+          <a
+            href="https://www.citruscircuits.org/uploads/6/9/3/4/6934550/strategic_design_2022.pdf"
+            target="_blank"
+            rel="noreferrer"
+          >
+            Strategic Design (PDF)
+          </a>
+        </div>
+        <div className="card">
+          <h3>Training Resources</h3>
           <p className="muted" style={{ fontSize: "0.86rem" }}>
             Public training material across hardware design, fabrication, electrical, software, and strategy.
           </p>
@@ -169,7 +237,7 @@ export function PlaybookPage() {
           </a>
         </div>
         <div className="card">
-          <h3>Citrus Circuits Fall Workshops</h3>
+          <h3>Fall Workshops</h3>
           <p className="muted" style={{ fontSize: "0.86rem" }}>
             Annual technical workshop series (2015-present) covering pre-season prep through competition strategy.
           </p>
@@ -177,8 +245,22 @@ export function PlaybookPage() {
             youtube.com/@CitrusCircuits
           </a>
         </div>
+      </div>
+
+      <h3>From 254 The Cheesy Poofs</h3>
+      <div className="card-grid">
         <div className="card">
-          <h3>254's Build Blog</h3>
+          <h3>Day 1: Kickoff and Game Analysis</h3>
+          <p className="muted" style={{ fontSize: "0.86rem" }}>
+            A blow-by-blow of Team 254's actual kickoff day — rules breakdown, strategy scoring model, and same-day
+            prototyping. Narrower and more concrete than a season-long blog archive.
+          </p>
+          <a href="https://www.team254.com/2014frc-day1/" target="_blank" rel="noreferrer">
+            team254.com/2014frc-day1
+          </a>
+        </div>
+        <div className="card">
+          <h3>Build Blog</h3>
           <p className="muted" style={{ fontSize: "0.86rem" }}>
             Their build-season blog archive is a genuinely useful read for day-by-day decision-making, not just
             highlight-reel robot reveals.
@@ -187,12 +269,37 @@ export function PlaybookPage() {
             team254.com/blog
           </a>
         </div>
+        <div className="card">
+          <h3>Public Code Archive</h3>
+          <p className="muted" style={{ fontSize: "0.86rem" }}>
+            Their full competition robot codebase, published publicly every year since 2012 — real competition-grade
+            FRC Java code to learn from, not just a highlight reel.
+          </p>
+          <a href="https://github.com/Team254" target="_blank" rel="noreferrer">
+            github.com/Team254
+          </a>
+        </div>
+      </div>
+
+      <h3>Community</h3>
+      <div className="card-grid">
+        <div className="card">
+          <h3>"Cheesy Drive" Explained</h3>
+          <p className="muted" style={{ fontSize: "0.86rem" }}>
+            A curvature-based teleop drive scheme originated by 254 and now a common default across FRC — a concrete
+            week-one win for a new programming subteam. Third-party writeup, not 254's own.
+          </p>
+          <a href="https://wiki.purduesigbots.com/software/robotics-basics/curvature-cheesy-drive" target="_blank" rel="noreferrer">
+            wiki.purduesigbots.com
+          </a>
+        </div>
       </div>
 
       <p className="source-note">
-        Team-specific claims above are drawn from public sources (Citrus Circuits' own site, 254's build-season
-        blog archive) as of 2026-08-14 — team practices evolve year to year, so treat this as a starting framework
-        to adapt, not a script to copy exactly.
+        Team-specific claims above are drawn from public sources (Citrus Circuits' own site, 254's build-season blog
+        and public GitHub, the Purdue SIGBots/BLRS wiki) as of 2026-08-14 — team practices evolve year to year, and
+        subteam structures/workshop materials get updated season to season, so treat this as a starting framework to
+        adapt, not a script to copy exactly.
       </p>
     </div>
   );
