@@ -1,5 +1,6 @@
 import { useEffect, useState } from "react";
 import { Link } from "react-router-dom";
+import { ObjectiveTable } from "../features/playbook/ObjectiveTable";
 
 interface ChecklistItem {
   id: string;
@@ -58,6 +59,17 @@ const KICKOFF_DAY_ITEMS: ChecklistItem[] = [
   { id: "defense", text: "Defense implications — can this game be played defensively, and does that change what \"good\" looks like?" },
 ];
 
+const DEEP_DIVE_ITEMS: ChecklistItem[] = [
+  { id: "rp-scenarios", text: "What are the realistic scenarios to earn every ranking point this game offers?" },
+  { id: "scoring-detail", text: "How does scoring actually work, in full detail — not just the point values?" },
+  { id: "match-flow-detail", text: "What will match flow look like, phase by phase, for a strong alliance?" },
+  { id: "non-scoring", text: "Are there non-scoring tasks (defense, blocking a shared resource, denying the opponent) that could swing a match?" },
+  { id: "quals-vs-playoffs", text: "How does optimal strategy change between qualification matches and playoffs?" },
+  { id: "ignorable", text: "What parts of the game can you ignore entirely and still be competitive?" },
+  { id: "elite-vs-good", text: "What will separate an elite robot from a merely good one this year?" },
+  { id: "control-destiny", text: "How can you control your own match outcome, independent of who you're paired with?" },
+];
+
 const FIRST_DAYS_ITEMS: ChecklistItem[] = [
   { id: "shortlist", text: "Shortlist 2-3 competing concepts for the mechanism that matters most this year — don't lock in the first idea on the whiteboard." },
   { id: "prototype", text: "Build cheap, ugly prototypes of each shortlisted concept before doing real CAD on any of them." },
@@ -70,9 +82,10 @@ export function PlaybookPage() {
     <div>
       <h1>Kickoff &amp; Build Season Playbook</h1>
       <p className="lede">
-        A process, not just a mechanism list — grounded in how two of FRC's most consistently competitive teams
-        actually run their first weeks: <strong>1678 Citrus Circuits</strong> (Davis, CA) and{" "}
-        <strong>254 The Cheesy Poofs</strong> (San Jose, CA).
+        A process, not just a mechanism list — grounded in how consistently competitive teams actually run their
+        first weeks and their events: <strong>1678 Citrus Circuits</strong> (Davis, CA),{" "}
+        <strong>254 The Cheesy Poofs</strong> (San Jose, CA), and <strong>341 Miss Daisy</strong>{" "}
+        (Ambler, PA — 2025 FIRST Mid-Atlantic District Springside Chestnut Hill winner).
       </p>
 
       <h2>1. Kickoff Day — Read the Game Like a Strategist First</h2>
@@ -93,8 +106,38 @@ export function PlaybookPage() {
         a strategy scoring spreadsheet ranking scoring actions by value — all before lunch, with prototyping starting
         that same afternoon.
       </p>
+      <p className="muted" style={{ fontSize: "0.85rem" }}>
+        <strong>Build the field parts early.</strong> Seeing and physically handling actual field elements changes
+        the decisions you make far more than reading dimensions off a PDF — if you have parents or mentors free on
+        kickoff weekend, put them on constructing field parts (from the official field drawings released alongside
+        the manual) while the team works through strategy, prioritizing whichever elements are most strategically
+        significant first.
+      </p>
+      <p>Once the rules make sense, push past the surface-level scoring table into questions that actually change design decisions:</p>
+      <Checklist storageKey="frckickoff-checklist-deep-dive" items={DEEP_DIVE_ITEMS} />
+      <p className="muted" style={{ fontSize: "0.85rem" }}>
+        <strong>Write a Robot "Will Do" List.</strong> A short, low-detail list of everything the robot must be able
+        to do for the season to count as a success — not a spec sheet, just a checkable list the whole team can
+        agree on in the first day or two and revisit periodically to stay focused as build season gets noisy.
+      </p>
 
-      <h2>2. First Days — Prototype, Don't Debate</h2>
+      <h2>2. Weighted Objective Table — Rank Scoring Tasks by Real Value</h2>
+      <p>
+        A simple point-value ranking overrates tasks that are miserable to design for and underrates tasks that
+        quietly unlock a ranking point. This tool — the core of Team 341 Miss Daisy's own kickoff process — scores
+        every scoring task on three separate weights (points, ease of design, ranking-point contribution) and adds
+        them into one comparable number, so the "what should we build first" conversation runs on the same numbers
+        for everyone in the room.
+      </p>
+      <ObjectiveTable />
+      <p className="muted" style={{ fontSize: "0.85rem" }}>
+        This table tells you what you already suspect, not something magic — its real value is forcing everyone to
+        commit to numbers instead of vibes before the debate starts. Pair it with an informal team vote (need it /
+        don't need it, per task) done live in the room — the vote has no power over the result, but surfaces where
+        the room actually disagrees with what the math says, which is usually worth a conversation.
+      </p>
+
+      <h2>3. First Days — Prototype, Don't Debate</h2>
       <p>
         254's own kickoff-week build log (Ultimate Ascent, January 2013) is a good record of this in practice: on
         kickoff day they started prototyping three completely different shooter concepts in parallel — a radius
@@ -105,17 +148,19 @@ export function PlaybookPage() {
       </p>
       <Checklist storageKey="frckickoff-checklist-first-days" items={FIRST_DAYS_ITEMS} />
 
-      <h2>3. Prioritize With Numbers, Not Gut Feel</h2>
+      <h2>4. Prioritize With Numbers, Not Gut Feel</h2>
       <p>
         Both teams' strategy process comes down to the same move: compare how long a scoring action realistically
         takes against how many points it's worth, and let that ranking decide what gets built first — not
         excitement about a cool mechanism. That's exactly what the{" "}
         <Link to="/cycle-time">Cycle Time Calculator</Link> on this site is for: model a scoring action's real
         pickup/travel/score time, see the points-per-match it actually produces, and compare it against other
-        actions before committing build time to one over another.
+        actions before committing build time to one over another. Use it alongside the weighted objective table
+        above — cycle time tells you how fast a task really is once you can do it; the objective table tells you
+        whether it's worth building at all.
       </p>
 
-      <h2>4. Build Season Timeline</h2>
+      <h2>5. Build Season Timeline</h2>
       <p>
         FIRST retired the mandatory "Stop Build Day" / Bag Day deadline back in the 2020 season — there's no
         official cutoff anymore, and your build season runs however long you want between Kickoff and your first
@@ -153,7 +198,7 @@ export function PlaybookPage() {
         </tbody>
       </table>
 
-      <h2>5. Organize the Team</h2>
+      <h2>6. Organize the Team</h2>
       <p>
         Kickoff weekend is also when it's easiest to sort out who's doing what — before build season pressure makes
         it awkward to renegotiate. 1678's real subteam breakdown is a solid model to adapt for a team of almost any
@@ -197,6 +242,89 @@ export function PlaybookPage() {
         Source: <a href="https://www.citruscircuits.org/subteams" target="_blank" rel="noreferrer">citruscircuits.org/subteams</a>.
         Strategy and Impact Award are secondary/opt-in subteams at 1678, layered on top of a primary assignment above
         — not everyone needs one, but it's worth deciding on purpose rather than by default.
+      </p>
+
+      <h2>7. Set Team Goals — Expectations vs. Stretch</h2>
+      <p>
+        Team 341 sets two distinct kinds of season goals rather than one blended list: <strong>expectations</strong>{" "}
+        (grounded in your team's actual past performance — win rate, ranking points, how deep you've gone in
+        playoffs before) and <strong>goals</strong> (a deliberate stretch beyond that). Keeping them separate makes
+        it possible to tell "we did about as well as we usually do" apart from "we actually grew this year," instead
+        of one number blurring both. Make every goal SMART, and be honest about what you actually want rather than
+        a safe, easily-hit number:
+      </p>
+      <div className="card-grid">
+        <div className="card">
+          <h3>S — Specific</h3>
+          <p className="muted" style={{ fontSize: "0.86rem" }}>Narrow enough to plan against, not a vague aspiration.</p>
+        </div>
+        <div className="card">
+          <h3>M — Measurable</h3>
+          <p className="muted" style={{ fontSize: "0.86rem" }}>You and your progress toward it can both be tracked with a number.</p>
+        </div>
+        <div className="card">
+          <h3>A — Achievable</h3>
+          <p className="muted" style={{ fontSize: "0.86rem" }}>Reachable within the season, given your team's actual resources.</p>
+        </div>
+        <div className="card">
+          <h3>R — Relevant</h3>
+          <p className="muted" style={{ fontSize: "0.86rem" }}>Aligned with your team's real values and long-term objectives.</p>
+        </div>
+        <div className="card">
+          <h3>T — Time-based</h3>
+          <p className="muted" style={{ fontSize: "0.86rem" }}>A realistic but ambitious end date to force prioritization.</p>
+        </div>
+      </div>
+      <p className="muted" style={{ fontSize: "0.85rem" }}>
+        <strong>Growth mindset, in practice:</strong> the healthiest way to hold these goals through a rough
+        competition is to focus on the process of playing well, not just whether you won — treat every match as a
+        chance to get better, prepare and practice deliberately, sweat the details, and correct mistakes one match at
+        a time rather than spiraling over a bad qual round. Teams that "play to improve" tend to outlast teams that
+        are only "playing to not lose."
+      </p>
+
+      <h2>8. Scouting &amp; the Match-Day Strategy Loop</h2>
+      <p>
+        Scouting only pays off if it feeds a real loop — data in, a decision out, every match. A workable structure
+        that scales from a handful of scouts to a large team:
+      </p>
+      <div className="card-grid">
+        <div className="card">
+          <h3>Why scout at all</h3>
+          <p className="muted" style={{ fontSize: "0.86rem" }}>
+            To build match strategies, give the drive team real feedback, build alliance-selection picklists, and
+            prepare playoff strategy — four distinct jobs, not one generic "collect data" task.
+          </p>
+        </div>
+        <div className="card">
+          <h3>Roles &amp; data flow</h3>
+          <p className="muted" style={{ fontSize: "0.86rem" }}>
+            Coach → scouting leads → match scouts and pit scouts, feeding one shared database that a match
+            predictor/analyst can query before every match. It doesn't need to be fancy software — a shared
+            spreadsheet works at small scale; the roles and the loop matter more than the tooling.
+          </p>
+        </div>
+        <div className="card">
+          <h3>Pre-match</h3>
+          <p className="muted" style={{ fontSize: "0.86rem" }}>
+            Pull each upcoming team's scouted data, get a quick expected-points read for both alliances, and hand
+            that to the drive team before they're on the field — not after.
+          </p>
+        </div>
+        <div className="card">
+          <h3>Post-match</h3>
+          <p className="muted" style={{ fontSize: "0.86rem" }}>
+            Review what actually happened (video helps) with the drive team right after the match, log what to do
+            differently, and let scouts flag back to the analyst anything they want tracked differently going
+            forward — the loop only works if it closes.
+          </p>
+        </div>
+      </div>
+      <p className="muted" style={{ fontSize: "0.85rem" }}>
+        At the end of an event (or the season), review your goals honestly: did you hit them, did you put in your
+        best effort toward them regardless of outcome, what did you actually learn, and what would you do
+        differently next time? That review is what turns next year's expectations into something grounded in real
+        data instead of a guess.
       </p>
 
       <h2>Further Resources</h2>
@@ -297,9 +425,11 @@ export function PlaybookPage() {
 
       <p className="source-note">
         Team-specific claims above are drawn from public sources (Citrus Circuits' own site, 254's build-season blog
-        and public GitHub, the Purdue SIGBots/BLRS wiki) as of 2026-08-14 — team practices evolve year to year, and
-        subteam structures/workshop materials get updated season to season, so treat this as a starting framework to
-        adapt, not a script to copy exactly.
+        and public GitHub, the Purdue SIGBots/BLRS wiki) as of 2026-08-14, plus Team 341 Miss Daisy's own kickoff and
+        competition strategy process (Wissahickon HS, Ambler PA — 2025 FIRST Mid-Atlantic District Springside
+        Chestnut Hill winner), shared directly with this team by a 341 mentor in December 2025 — team practices
+        evolve year to year, and subteam structures/workshop materials get updated season to season, so treat this
+        as a starting framework to adapt, not a script to copy exactly.
       </p>
     </div>
   );
