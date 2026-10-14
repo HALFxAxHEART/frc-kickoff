@@ -120,10 +120,10 @@ export type KickoffKind = KickoffItemData["kind"];
 export const DEFAULT_WORKSPACE = "2027";
 
 export const CHECKLIST_PHASES: { id: ChecklistPhase; label: string }[] = [
-  { id: "fall", label: "Fall prep (before Jan 9)" },
-  { id: "saturday", label: "Saturday — Kickoff day" },
-  { id: "sunday", label: "Sunday — Split day" },
-  { id: "week1", label: "Week 1" },
+  { id: "fall", label: "Before" },
+  { id: "saturday", label: "Day 1 — Saturday / Session 1" },
+  { id: "sunday", label: "Day 2 — Sunday / Session 2" },
+  { id: "week1", label: "After — Week 1 / debrief" },
 ];
 
 type ChecklistSeed = Pick<ChecklistData, "phase" | "time" | "label">;
@@ -134,7 +134,8 @@ type ChecklistSeed = Pick<ChecklistData, "phase" | "time" | "label">;
  * every row is editable in the app.
  */
 const CHECKLIST_SEED: ChecklistSeed[] = [
-  { phase: "fall", time: "Oct–Nov", label: "Do a full practice run of this process on a past game during a fall meeting (use a separate Practice workspace)" },
+  { phase: "fall", time: "Oct", label: "Practice kickoff on CRESCENDO 2024 — two 3-hour sessions, learn the process (board: Practice – CRESCENDO 2024)" },
+  { phase: "fall", time: "Sat Dec 12", label: "Mock kickoff dress rehearsal on REEFSCAPE 2025 — run it on the real Jan 9 clock (Gantt milestone)" },
   { phase: "fall", time: "Nov", label: "Set season expectations (from past results) and SMART goals; get the whole team aligned on them" },
   { phase: "fall", time: "Dec", label: "Recruit 2 mock-game coaches (leave Southgate early, lay out the field in the shop — they don't need the rules)" },
   { phase: "fall", time: "Dec", label: "Recruit parent volunteers for the Sunday field-parts build" },
@@ -157,7 +158,7 @@ const CHECKLIST_SEED: ChecklistSeed[] = [
   { phase: "sunday", time: "2:30", label: "Build half reports prototype findings: what's easier / harder than expected, how the game piece behaves" },
   { phase: "sunday", time: "3:00", label: "Draft the Robot Will Do list — what the robot must do, not how" },
   { phase: "sunday", time: "4:15", label: "Whole team reads the Will Do list and signs off" },
-  { phase: "week1", time: "Mon", label: "Requirements → brainstorm → fast elimination of concepts" },
+  { phase: "week1", time: "Mon Jan 11", label: "Turn the Will Do list into TESTABLE requirements (\"intake in < 1 s\", not \"good intake\") → brainstorm + RI3D research → fast elimination" },
   { phase: "week1", time: "Wed–Thu", label: "Prototype and test the risky parts; keep building field parts by priority" },
   { phase: "week1", time: "Sat Jan 16", label: "Robot direction decided — check it against the Will Do list; mentors place the first parts order" },
 ];
