@@ -306,10 +306,12 @@ th {
 }
 
 .tabs button {
+  white-space: nowrap;
+  flex-shrink: 0;
   border: none;
   border-radius: 0;
   background: transparent;
-  padding: 10px 14px;
+  padding: 10px 11px;
   color: var(--text-secondary);
   border-bottom: 2px solid transparent;
 }
@@ -367,5 +369,244 @@ th {
 @media (max-width: 800px) {
   .two-col {
     grid-template-columns: 1fr;
+  }
+}
+
+/* ---- Kickoff Weekend board ---- */
+.row-between {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  flex-wrap: wrap;
+}
+
+.workspace-bar {
+  display: grid;
+  grid-template-columns: minmax(160px, 240px) minmax(220px, 1fr);
+  gap: 16px;
+  align-items: end;
+}
+
+.edit-table td {
+  padding: 4px 6px;
+  vertical-align: top;
+}
+
+.edit-table input[type="checkbox"] {
+  width: 18px;
+  height: 18px;
+  margin-top: 8px;
+}
+
+.edit-table tr.is-done input[type="text"],
+.edit-table tr.is-done textarea {
+  color: var(--text-muted);
+  text-decoration: line-through;
+}
+
+.icon-btn {
+  padding: 2px 8px;
+  background: transparent;
+  border-color: transparent;
+  color: var(--text-muted);
+  font-size: 1.1rem;
+  line-height: 1.2;
+}
+
+.icon-btn:hover {
+  color: var(--status-critical);
+  border-color: var(--border);
+}
+
+.progress {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 0.8rem;
+}
+
+.progress-track {
+  width: 120px;
+  height: 8px;
+  border-radius: 999px;
+  background: var(--gridline);
+  overflow: hidden;
+}
+
+.progress-fill {
+  height: 100%;
+  background: var(--status-good);
+  transition: width 0.3s ease;
+}
+
+.error {
+  color: var(--status-critical);
+}
+
+.vote-row {
+  padding: 10px 0 12px;
+  border-bottom: 1px solid var(--gridline);
+}
+
+.vote-buttons {
+  display: flex;
+  gap: 6px;
+  flex-wrap: wrap;
+  margin: 8px 0 6px;
+}
+
+.vote-btn {
+  flex: 1 1 110px;
+  padding: 10px 12px;
+}
+
+.vote-btn.selected {
+  background: color-mix(in srgb, var(--vote-color) 22%, transparent);
+  border-color: var(--vote-color);
+  font-weight: 600;
+}
+
+.vote-bar {
+  display: flex;
+  height: 6px;
+  border-radius: 999px;
+  overflow: hidden;
+  background: var(--gridline);
+}
+
+.good-bad {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+  gap: 12px;
+  font-size: 0.88rem;
+}
+
+.good-bad ul {
+  margin: 6px 0 0;
+  padding-left: 18px;
+}
+
+.willdo-list {
+  padding-left: 22px;
+}
+
+.willdo-list li {
+  margin-bottom: 14px;
+}
+
+.willdo-list li > * + * {
+  margin-top: 6px;
+}
+
+.willdo-grid {
+  display: grid;
+  grid-template-columns: 1fr 160px auto;
+  gap: 6px;
+}
+
+.willdo-list li.is-cut .willdo-grid > :first-child {
+  text-decoration: line-through;
+  color: var(--text-muted);
+}
+
+.hint {
+  font-size: 0.8rem;
+  color: var(--status-warning);
+  margin: 4px 0 0;
+}
+
+.chips {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+}
+
+.chip {
+  display: inline-flex;
+  align-items: center;
+  gap: 2px;
+  padding: 2px 4px 2px 10px;
+  border-radius: 999px;
+  background: color-mix(in srgb, var(--status-good) 18%, transparent);
+  font-size: 0.85rem;
+}
+
+.badge.good {
+  background: color-mix(in srgb, var(--status-good) 20%, transparent);
+  color: var(--status-good);
+  font-weight: 600;
+}
+
+.badge.bad {
+  background: color-mix(in srgb, var(--status-critical) 18%, transparent);
+  color: var(--status-critical);
+  font-weight: 600;
+}
+
+.rp-calls li {
+  margin-bottom: 8px;
+}
+
+@media (max-width: 640px) {
+  .workspace-bar,
+  .willdo-grid {
+    grid-template-columns: 1fr;
+  }
+  .edit-table th:nth-child(n + 4),
+  .edit-table td {
+    font-size: 0.85rem;
+  }
+}
+
+textarea.autogrow {
+  resize: none;
+  overflow: hidden;
+  line-height: 1.35;
+  display: block;
+}
+
+.vote-head {
+  display: flex;
+  align-items: flex-start;
+  gap: 6px;
+}
+
+.vote-head > :first-child {
+  flex: 1;
+  min-width: 0;
+}
+
+@media (max-width: 640px) {
+  /* Stack editable table rows on phones: small cells share a line, wide text cells get their own. */
+  .edit-table thead {
+    display: none;
+  }
+  .edit-table tr {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: flex-start;
+    gap: 4px;
+    padding: 8px 0;
+    border-bottom: 1px solid var(--gridline);
+  }
+  .edit-table td {
+    border: none;
+    padding: 0;
+    width: auto !important;
+  }
+  .edit-table td.wide {
+    order: 2;
+    flex: 1 1 100%;
+  }
+  .edit-table td.owner {
+    order: 3;
+    flex: 1 1 100%;
+  }
+  .edit-table td:not(.wide):not(.owner) {
+    flex: 0 1 auto;
+  }
+  .edit-table td:last-child {
+    margin-left: auto;
   }
 }

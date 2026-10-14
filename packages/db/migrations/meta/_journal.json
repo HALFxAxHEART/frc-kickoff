@@ -8,6 +8,13 @@
       "when": 1786683278725,
       "tag": "0000_slow_human_cannonball",
       "breakpoints": true
+    },
+    {
+      "idx": 1,
+      "version": "7",
+      "when": 1791998654998,
+      "tag": "0001_kickoff_weekend",
+      "breakpoints": true
     }
   ]
 }

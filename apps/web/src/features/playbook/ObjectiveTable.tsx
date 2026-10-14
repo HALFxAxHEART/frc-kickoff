@@ -129,6 +129,7 @@ export function ObjectiveTable() {
       <button onClick={() => setRows((prev) => [...prev, newRow()])} style={{ marginTop: 8 }}>
         + Task
       </button>
+      <UnlimitedScoringHelper />
 
       <div className="field-row" style={{ marginTop: 16 }}>
         <div className="field">
@@ -163,8 +164,8 @@ export function ObjectiveTable() {
           <tr>
             <th>Rank</th>
             <th>Task</th>
-            <th>Weighted sum</th>
-            <th>Weighted sum (no RP)</th>
+            <th>Weighted sum (quals)</th>
+            <th>No RP (playoffs)</th>
           </tr>
         </thead>
         <tbody>
@@ -187,5 +188,45 @@ export function ObjectiveTable() {
         conversation, not override the numbers.
       </p>
     </div>
+  );
+}
+
+/**
+ * 341's rule for "potential points": in a capped game, assume the ability earns every point it
+ * unlocks (L4 = 12 branches × 5). In an uncapped game (e.g. 2024), pick a reasonable cycle count from
+ * match time ÷ cycle time — the exact number matters less than using the same assumption everywhere.
+ */
+function UnlimitedScoringHelper() {
+  const [seconds, setSeconds] = useState(135);
+  const [cycle, setCycle] = useState(7);
+  const [perPiece, setPerPiece] = useState(2);
+  const cycles = cycle > 0 ? Math.floor(seconds / cycle) : 0;
+  return (
+    <details style={{ marginTop: 12 }}>
+      <summary className="muted" style={{ cursor: "pointer", fontSize: "0.85rem" }}>
+        No scoring cap this year? Work out potential points from cycle time
+      </summary>
+      <div className="field-row" style={{ marginTop: 8 }}>
+        <div className="field">
+          <label>Seconds available</label>
+          <input type="number" min={0} value={seconds} onChange={(e) => setSeconds(Number(e.target.value))} />
+        </div>
+        <div className="field">
+          <label>Seconds per cycle</label>
+          <input type="number" min={0} step={0.5} value={cycle} onChange={(e) => setCycle(Number(e.target.value))} />
+        </div>
+        <div className="field">
+          <label>Points per piece</label>
+          <input type="number" min={0} value={perPiece} onChange={(e) => setPerPiece(Number(e.target.value))} />
+        </div>
+      </div>
+      <p style={{ margin: 0 }}>
+        {cycles} cycles × {perPiece} pts = <strong>{cycles * perPiece} potential points</strong>
+      </p>
+      <p className="muted" style={{ fontSize: "0.78rem" }}>
+        Use the same cycle assumption for every uncapped task so they stay comparable. For capped tasks, assume you can
+        claim every point the ability opens up.
+      </p>
+    </details>
   );
 }

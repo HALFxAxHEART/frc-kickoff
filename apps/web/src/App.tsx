@@ -7,9 +7,11 @@ import { MechanismLibraryPage } from "./pages/MechanismLibraryPage";
 import { ConceptsPage } from "./pages/ConceptsPage";
 import { PlaybookPage } from "./pages/PlaybookPage";
 import { SimulatePage } from "./pages/SimulatePage";
+import { KickoffWeekendPage } from "./pages/KickoffWeekendPage";
 
 const NAV_LINKS = [
   { to: "/", label: "Dashboard", end: true },
+  { to: "/weekend", label: "Kickoff Weekend" },
   { to: "/game", label: "Game Breakdown" },
   { to: "/playbook", label: "Playbook" },
   { to: "/cycle-time", label: "Cycle Time" },
@@ -40,6 +42,7 @@ export function App() {
       <main className="app-main">
         <Routes>
           <Route path="/" element={<DashboardPage />} />
+          <Route path="/weekend" element={<KickoffWeekendPage />} />
           <Route path="/game" element={<GameBreakdownPage />} />
           <Route path="/playbook" element={<PlaybookPage />} />
           <Route path="/cycle-time" element={<CycleTimePage />} />
