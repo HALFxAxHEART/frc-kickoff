@@ -6,3 +6,4 @@ export * from "./linear";
 export * from "./flywheel";
 export * from "./climber-stages";
 export * from "./four-bar";
+export * from "./roller-intake";

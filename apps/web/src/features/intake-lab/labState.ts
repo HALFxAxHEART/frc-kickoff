@@ -1,0 +1,144 @@
+import { z } from "zod";
+import { GAME_PIECE_PRESETS, ROLLER_SURFACES, type GamePieceSpec, type IntakeBar, type IntakeLabConfig, type RollerSurfaceSpec } from "@frckickoff/shared";
+
+/** Everything the Intake Lab remembers between visits (saved in this browser only). */
+export interface LabState {
+  pieces: GamePieceSpec[];
+  pieceId: string;
+  pieceStartXIn: number;
+  bars: IntakeBar[];
+  driveSpeedFtPerSec: number;
+  rollerMotorId: string;
+  rollerOutput: number;
+  bumper: { depthIn: number; bottomIn: number; topIn: number };
+  surfaces: RollerSurfaceSpec[];
+}
+
+const bar = (id: string, xIn: number, yIn: number, passes: IntakeBar["passes"]): IntakeBar => ({
+  id,
+  xIn,
+  yIn,
+  tubeOdIn: 2,
+  tubeSurface: "poly-grip",
+  wheelOdIn: 0,
+  wheelSurface: "flex-wheel",
+  ratio: 2,
+  passes,
+});
+
+/** A layout that pulls a 2025 coral in at 2-15 ft/s (checked in the simulator), all 2 in polycarb tubes with grip tape. */
+export const DEFAULT_BARS: IntakeBar[] = [
+  bar("B1", 13, 5, "under"),
+  bar("B2", 6.5, 1.6, "over"),
+  bar("B3", 7.5, 11, "under"),
+  bar("B4", 3.3, 7.2, "over"),
+  bar("B5", -1, 11.5, "under"),
+];
+
+export function defaultLabState(): LabState {
+  return {
+    pieces: GAME_PIECE_PRESETS.map((p) => ({ ...p })),
+    pieceId: "coral-2025",
+    pieceStartXIn: 22,
+    bars: DEFAULT_BARS.map((b) => ({ ...b })),
+    driveSpeedFtPerSec: 8,
+    rollerMotorId: "kraken-x60",
+    rollerOutput: 0.8,
+    bumper: { depthIn: 3.5, bottomIn: 1, topIn: 6 },
+    surfaces: ROLLER_SURFACES.map((s) => ({ ...s })),
+  };
+}
+
+const surfaceId = z.enum(["poly-bare", "poly-grip", "poly-silicone", "compliant-wheel", "flex-wheel", "stealth-wheel"]);
+const labSchema = z.object({
+  pieces: z
+    .array(
+      z.object({
+        id: z.string(),
+        name: z.string(),
+        diameterIn: z.number(),
+        weightLb: z.number(),
+        shape: z.enum(["tube", "ball"]),
+        stiffnessNPerM: z.number(),
+        carpetMu: z.number(),
+      }),
+    )
+    .min(1),
+  pieceId: z.string(),
+  pieceStartXIn: z.number(),
+  bars: z.array(
+    z.object({
+      id: z.string(),
+      xIn: z.number(),
+      yIn: z.number(),
+      tubeOdIn: z.number(),
+      tubeSurface: surfaceId,
+      wheelOdIn: z.number(),
+      wheelSurface: surfaceId,
+      ratio: z.number(),
+      passes: z.enum(["under", "over"]),
+    }),
+  ),
+  driveSpeedFtPerSec: z.number(),
+  rollerMotorId: z.string(),
+  rollerOutput: z.number(),
+  bumper: z.object({ depthIn: z.number(), bottomIn: z.number(), topIn: z.number() }),
+  surfaces: z.array(
+    z.object({
+      id: surfaceId,
+      label: z.string(),
+      kind: z.enum(["tube", "wheel"]),
+      mu: z.number(),
+      stiffnessNPerM: z.number(),
+      note: z.string(),
+    }),
+  ),
+}) satisfies z.ZodType<LabState>;
+
+const STORAGE_KEY = "intake-lab-v1";
+
+export function loadLabState(): LabState {
+  const raw = localStorage.getItem(STORAGE_KEY);
+  if (!raw) return defaultLabState();
+  try {
+    const parsed = labSchema.safeParse(JSON.parse(raw));
+    if (parsed.success) return parsed.data;
+    console.warn("Intake Lab: saved setup didn't match the current format, starting fresh", parsed.error);
+  } catch (err) {
+    console.warn("Intake Lab: couldn't read saved setup, starting fresh", err);
+  }
+  return defaultLabState();
+}
+
+export function saveLabState(state: LabState): void {
+  localStorage.setItem(STORAGE_KEY, JSON.stringify(state));
+}
+
+export function activePiece(state: LabState): GamePieceSpec {
+  return state.pieces.find((p) => p.id === state.pieceId) ?? state.pieces[0] ?? GAME_PIECE_PRESETS[0]!;
+}
+
+export function toConfig(state: LabState): IntakeLabConfig {
+  return {
+    piece: activePiece(state),
+    pieceStartXIn: state.pieceStartXIn,
+    bars: state.bars,
+    driveSpeedFtPerSec: state.driveSpeedFtPerSec,
+    rollerMotorId: state.rollerMotorId,
+    rollerOutput: state.rollerOutput,
+    bumper: state.bumper,
+    surfaces: state.surfaces,
+  };
+}
+
+/** Next unused bar name: B1, B2, ... */
+export function nextBarId(bars: IntakeBar[]): string {
+  for (let n = 1; ; n++) {
+    const id = `B${n}`;
+    if (!bars.some((b) => b.id === id)) return id;
+  }
+}
+
+export const N_TO_LBF = 0.224809;
+/** N/m -> lb per inch of squish */
+export const NPM_TO_LB_PER_IN = 0.224809 * 0.0254;

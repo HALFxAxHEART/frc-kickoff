@@ -610,3 +610,51 @@ textarea.autogrow {
     margin-left: auto;
   }
 }
+
+/* ---------- Intake Lab ---------- */
+.il-stage { padding-bottom: 10px; }
+.il-toolbar { flex-wrap: wrap; gap: 8px; margin-bottom: 8px; }
+.il-stats { font-size: 0.85rem; }
+.il-canvas { width: 100%; height: auto; max-height: 62vh; display: block; touch-action: none; user-select: none; background: var(--surface-raised); border-radius: 8px; border: 1px solid var(--border); }
+.il-canvas.dragging { cursor: grabbing; }
+.il-robot { fill: var(--gridline); opacity: 0.45; }
+.il-perimeter { stroke: var(--text-muted); stroke-width: 0.08; stroke-dasharray: 0.4 0.3; }
+.il-limit { stroke: var(--status-serious); stroke-width: 0.08; stroke-dasharray: 0.6 0.4; }
+.il-floor { stroke: var(--text-secondary); stroke-width: 0.12; }
+.il-bumper { fill: var(--series-1); opacity: 0.85; }
+.il-small { font-size: 0.6px; fill: var(--text-muted); }
+.il-axis { font-size: 0.55px; fill: var(--text-muted); }
+.il-label { font-size: 0.68px; font-weight: 700; fill: var(--text-primary); pointer-events: none; }
+.il-bar { cursor: grab; }
+.il-tube { fill: var(--surface); stroke-width: 0.16; }
+.il-wheel { fill: var(--surface); fill-opacity: 0.55; stroke-width: 0.22; stroke-dasharray: 0.35 0.18; }
+.il-spoke { stroke-width: 0.14; stroke-linecap: round; }
+.il-piece { fill: #efe8d8; stroke: #8f846d; stroke-width: 0.14; }
+.il-piece-inner { fill: none; stroke: #c5b99f; stroke-width: 0.08; }
+.il-piece-mark { stroke: #8f846d; stroke-width: 0.12; }
+.il-start { fill: none; stroke: var(--text-muted); stroke-width: 0.08; stroke-dasharray: 0.3 0.25; cursor: ew-resize; pointer-events: all; }
+.il-path { fill: none; stroke: var(--series-4); stroke-width: 0.1; stroke-dasharray: 0.25 0.2; }
+.il-force { stroke: var(--status-critical); stroke-width: 0.12; }
+.il-ghost { fill: none; stroke: var(--series-7); stroke-width: 0.08; stroke-dasharray: 0.3 0.2; }
+.il-dash { stroke: var(--series-7); stroke-width: 0.06; stroke-dasharray: 0.25 0.2; }
+.il-arc { fill: none; stroke: var(--series-7); stroke-width: 0.08; }
+.il-dot-good { fill: var(--status-good); }
+.il-dot-bad { fill: var(--status-critical); }
+.il-playback { display: flex; gap: 10px; align-items: center; margin-top: 10px; }
+.il-playback input[type="range"] { flex: 1; padding: 0; }
+.il-playback select { width: auto; }
+.il-time { min-width: 4.5em; font-variant-numeric: tabular-nums; }
+.il-buttons { display: flex; gap: 8px; }
+.il-table-wrap { overflow-x: auto; }
+.il-table td, .il-table th { padding: 5px 5px; white-space: nowrap; }
+.il-table th { text-transform: none; }
+.il-table { font-size: 0.85rem; }
+.il-table select, .il-table input { padding: 4px 5px; width: auto; }
+.il-table tbody tr { cursor: pointer; }
+.il-table tbody tr.selected td { background: color-mix(in srgb, var(--series-1) 12%, transparent); }
+.il-num { font-variant-numeric: tabular-nums; }
+.il-ok { color: var(--status-good); font-weight: 600; }
+.il-bad { color: var(--status-critical); font-weight: 600; }
+.il-math h3 { margin-top: 18px; }
+.il-formula { background: var(--surface-raised); border: 1px solid var(--border); border-left: 4px solid var(--series-1); border-radius: 8px; padding: 10px 12px; overflow-x: auto; font-size: 0.85rem; line-height: 1.5; white-space: pre; }
+.il-callout { background: color-mix(in srgb, var(--series-4) 14%, transparent); border-radius: 8px; padding: 8px 12px; }
