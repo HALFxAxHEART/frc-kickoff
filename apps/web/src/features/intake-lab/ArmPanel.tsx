@@ -196,16 +196,16 @@ export function ArmPanel({ linkage, drive, bars, analysis, deploy, stow, onLinka
             </div>
           </div>
           <div className="field">
-            <label>Rollers bolted to the intake (they move with it)</label>
+            <label>Rollers that ride on the intake (untick a roller that's bolted to the robot, like one inside the frame)</label>
             <div className="chips">
               {bars.map((b) => (
                 <label key={b.id} className="chip">
                   <input
                     type="checkbox"
                     style={{ width: "auto", marginRight: 6 }}
-                    checked={linkage.barsOnArm.includes(b.id)}
+                    checked={!linkage.barsFixed.includes(b.id)}
                     onChange={(e) =>
-                      onLinkage({ barsOnArm: e.target.checked ? [...linkage.barsOnArm, b.id] : linkage.barsOnArm.filter((id) => id !== b.id) })
+                      onLinkage({ barsFixed: e.target.checked ? linkage.barsFixed.filter((id) => id !== b.id) : [...linkage.barsFixed, b.id] })
                     }
                   />
                   {b.id}

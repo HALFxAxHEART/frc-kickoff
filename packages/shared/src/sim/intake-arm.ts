@@ -26,8 +26,8 @@ export interface IntakeLinkage {
   d: Pt;
   /** Driver-link angle when stowed (degrees, CCW from forward) */
   stowedDriverDeg: number;
-  /** ids of the bars bolted to the coupler (they move with the intake) */
-  barsOnArm: string[];
+  /** ids of the bars bolted to the ROBOT (they stay put). Every other bar rides on the intake plate. */
+  barsFixed: string[];
 }
 
 export interface IntakeArmDrive {
@@ -74,7 +74,7 @@ function couplerLocal(l: IntakeLinkage, bars: IntakeBar[], surfaces?: RollerSurf
   const ux = (l.d.x - l.c.x) / Math.max(dist(l.c, l.d), 1e-9);
   const uy = (l.d.y - l.c.y) / Math.max(dist(l.c, l.d), 1e-9);
   return bars
-    .filter((b) => l.barsOnArm.includes(b.id))
+    .filter((b) => !l.barsFixed.includes(b.id))
     .map((b) => {
       const rx = b.xIn - l.c.x;
       const ry = b.yIn - l.c.y;

@@ -78,7 +78,12 @@ export function IntakeCanvas({ config, analysis, frames, frameIndex, focusBarId,
   const minX = Math.min(...xs);
   const maxX = Math.max(...xs);
   const maxY = Math.max(...ys);
-  const viewBox = `${minX} ${-maxY} ${maxX - minX} ${maxY + 2.5}`;
+  const liveView = { minX, maxX, maxY };
+  // While dragging, the view must NOT resize: if it grew as you dragged something up, the thing would slide under the
+  // mouse, move further, grow the view again... and run away. Freeze it on pointer-down, let it refit on release.
+  const frozenView = useRef<typeof liveView | null>(null);
+  const view = drag && frozenView.current ? frozenView.current : liveView;
+  const viewBox = `${view.minX} ${-view.maxY} ${view.maxX - view.minX} ${view.maxY + 2.5}`;
 
   function svgPoint(e: ReactPointerEvent<SVGSVGElement>): { x: number; y: number } | null {
     const svg = svgRef.current;
@@ -92,6 +97,7 @@ export function IntakeCanvas({ config, analysis, frames, frameIndex, focusBarId,
     return (e: ReactPointerEvent<SVGElement>) => {
       e.stopPropagation();
       svgRef.current?.setPointerCapture(e.pointerId);
+      frozenView.current = liveView;
       setDrag(target);
       onDragStateChange(true);
     };
@@ -101,6 +107,10 @@ export function IntakeCanvas({ config, analysis, frames, frameIndex, focusBarId,
     if (!drag) return;
     const p = svgPoint(e);
     if (!p) return;
+    // keep whatever you're dragging inside the (frozen) picture
+    const fv = frozenView.current ?? liveView;
+    p.x = Math.min(Math.max(p.x, fv.minX + 0.5), fv.maxX - 0.5);
+    p.y = Math.min(p.y, fv.maxY - 0.5);
     if (drag.kind === "bar") onMoveBar(drag.id, round1(p.x), round1(Math.max(0.2, p.y)));
     else if (drag.kind === "joint") arm.onMoveJoint(drag.key, round1(p.x), round1(Math.max(0.2, p.y)));
     else onMovePieceStart(round1(Math.max(config.bumper.depthIn + (analysis.shape.kind === "circle" ? rp : analysis.shape.hx) + 0.5, p.x)));
@@ -109,6 +119,7 @@ export function IntakeCanvas({ config, analysis, frames, frameIndex, focusBarId,
   function endDrag(e: ReactPointerEvent<SVGSVGElement>) {
     if (!drag) return;
     svgRef.current?.releasePointerCapture(e.pointerId);
+    frozenView.current = null;
     setDrag(null);
     onDragStateChange(false);
   }
@@ -197,29 +208,29 @@ export function IntakeCanvas({ config, analysis, frames, frameIndex, focusBarId,
       </defs>
 
       {/* inside the robot */}
-      <rect x={minX} y={-maxY} width={-minX} height={maxY} className="il-robot" />
-      <text x={minX + 0.4} y={-0.5} className="il-small">
+      <rect x={view.minX} y={-view.maxY} width={-view.minX} height={view.maxY} className="il-robot" />
+      <text x={view.minX + 0.4} y={-0.5} className="il-small">
         inside robot
       </text>
-      <line x1={0} y1={-maxY} x2={0} y2={0} className="il-perimeter" />
-      <text x={0.3} y={-maxY + 1.2} className="il-small">
+      <line x1={0} y1={-view.maxY} x2={0} y2={0} className="il-perimeter" />
+      <text x={0.3} y={-view.maxY + 1.2} className="il-small">
         frame perimeter
       </text>
-      <line x1={18} y1={-maxY} x2={18} y2={0} className="il-limit" />
-      <text x={18.3} y={-maxY + 1.2} className="il-small">
+      <line x1={18} y1={-view.maxY} x2={18} y2={0} className="il-limit" />
+      <text x={18.3} y={-view.maxY + 1.2} className="il-small">
         18 in limit (2025)
       </text>
 
       {/* inch grid every 2 in */}
-      {Array.from({ length: Math.ceil((maxX - minX) / 2) + 1 }, (_, i) => Math.ceil(minX / 2) * 2 + i * 2).map((gx) => (
+      {Array.from({ length: Math.ceil((view.maxX - view.minX) / 2) + 1 }, (_, i) => Math.ceil(view.minX / 2) * 2 + i * 2).map((gx) => (
         <text key={gx} x={gx} y={1.8} className="il-axis" textAnchor="middle">
           {gx}
         </text>
       ))}
 
       {/* carpet */}
-      <rect x={minX} y={0} width={maxX - minX} height={1} fill="url(#il-hatch)" />
-      <line x1={minX} y1={0} x2={maxX} y2={0} className="il-floor" />
+      <rect x={view.minX} y={0} width={view.maxX - view.minX} height={1} fill="url(#il-hatch)" />
+      <line x1={view.minX} y1={0} x2={view.maxX} y2={0} className="il-floor" />
 
       {/* bumper */}
       <rect

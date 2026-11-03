@@ -52,7 +52,7 @@ export const DEFAULT_BARS: IntakeBar[] = [
 /** A buildable 4-bar for the default bars (found by searching layouts in the simulator): links 4-10 in,
  *  stows inside the frame, clears the bumper and the fixed roller B5, folds up when hit, stays 40+ degrees from toggle. */
 export function defaultLinkage(): IntakeLinkage {
-  return { a: { x: -6.8, y: 11.5 }, b: { x: -9.8, y: 14.5 }, c: { x: 3.1, y: 14.5 }, d: { x: -1.7, y: 18.7 }, stowedDriverDeg: 141.5, barsOnArm: ["B1", "B2", "B3", "B4"] };
+  return { a: { x: -6.8, y: 11.5 }, b: { x: -9.8, y: 14.5 }, c: { x: 3.1, y: 14.5 }, d: { x: -1.7, y: 18.7 }, stowedDriverDeg: 141.5, barsFixed: ["B5"] };
 }
 
 export function defaultArmDrive(): IntakeArmDrive {
@@ -134,9 +134,17 @@ const labSchema = z.object({
   ),
   // added later: older saved setups don't have these, so they get the defaults
   linkage: z
-    .object({ a: pt, b: pt, c: pt, d: pt, stowedDriverDeg: z.number(), barsOnArm: z.array(z.string()) })
-    .optional()
-    .transform((v) => v ?? defaultLinkage()),
+    .object({
+      a: pt,
+      b: pt,
+      c: pt,
+      d: pt,
+      stowedDriverDeg: z.number(),
+      barsFixed: z.array(z.string()).optional(),
+      // older saves listed the bars ON the arm instead (converted in loadLabState)
+      barsOnArm: z.array(z.string()).optional(),
+    })
+    .optional(),
   armDrive: z
     .object({
       motorId: z.string(),
@@ -161,7 +169,18 @@ export function loadLabState(): LabState {
   try {
     const parsed = labSchema.safeParse(JSON.parse(raw));
     if (parsed.success) {
-      const data: LabState = parsed.data;
+      const raw = parsed.data;
+      // Linkage: older saves listed the bars ON the arm, so bars added later were left behind. Now every bar rides the arm
+      // unless it's fixed to the robot; a bar counts as fixed only if it wasn't on the arm AND sits inside the frame (x <= 0).
+      const savedLinkage = raw.linkage;
+      const { barsOnArm, barsFixed, ...joints } = savedLinkage ?? { ...defaultLinkage(), barsOnArm: undefined };
+      const linkage: IntakeLinkage = savedLinkage
+        ? {
+            ...joints,
+            barsFixed: barsFixed ?? raw.bars.filter((b) => !(barsOnArm ?? []).includes(b.id) && b.xIn <= 0).map((b) => b.id),
+          }
+        : defaultLinkage();
+      const data: LabState = { ...raw, linkage };
       // surfaces added after this setup was saved (e.g. WCP Star Flex) get their default numbers
       const missing = ROLLER_SURFACES.filter((d) => !data.surfaces.some((s) => s.id === d.id)).map((d) => ({ ...d }));
       // coral saved before tubes had a length gets its real length back
