@@ -42,6 +42,9 @@ const SHORT_LABELS: Record<RollerSurfaceId, string> = {
   "compliant-wheel": "Compliant",
   "flex-wheel": "Flex",
   "stealth-wheel": "Stealth",
+  "star-flex-30a": "WCP Star 30A",
+  "star-flex-45a": "WCP Star 45A",
+  "star-flex-60a": "WCP Star 60A",
 };
 const PIECE_HARDNESS: { label: string; stiffnessNPerM: number }[] = [
   { label: "Hard (PVC, plastic)", stiffnessNPerM: 200000 },
@@ -196,6 +199,18 @@ export function IntakeLabPage() {
             <button className={mode === "arm" ? "active" : ""} onClick={() => setMode("arm")}>
               Deploy / stow (arm)
             </button>
+            {mode === "pickup" && piece.shape === "tube" && (piece.lengthIn ?? 0) > piece.diameterIn && (
+              <select
+                value={state.orientation}
+                onChange={(e) => update({ orientation: e.target.value === "end-on" ? "end-on" : e.target.value === "standing" ? "standing" : "sideways" })}
+                aria-label="How the piece lies"
+                style={{ width: "auto" }}
+              >
+                <option value="sideways">{piece.name}: lying sideways</option>
+                <option value="end-on">{piece.name}: pointing at the robot</option>
+                <option value="standing">{piece.name}: standing on end</option>
+              </select>
+            )}
             {mode === "arm" && (
               <select value={armDir} onChange={(e) => setArmDir(e.target.value === "stow" ? "stow" : "deploy")} aria-label="Arm move" style={{ width: "auto" }}>
                 <option value="deploy">play: deploy</option>
@@ -288,7 +303,8 @@ export function IntakeLabPage() {
         </div>
         <p className="muted">
           Each bar is a polycarbonate tube. You can slide wheels onto it: whichever is bigger touches the piece. "Under" = the piece goes under the bar (its
-          bottom spins toward the robot). "Over" = the piece rides over it (its top spins toward the robot). x is inches in front of the frame perimeter
+          bottom spins toward the robot). "Over" = the piece rides over it (its top spins toward the robot). WCP Star Flex
+          wheels come in 1.625, 2, 3 and 4 in (plus 5 in) on 1/2 in hex, in 30A, 45A or 60A silicone. x is inches in front of the frame perimeter
           (negative = inside the robot), y is inches above the carpet. Click a row to see its math below.
         </p>
         <div className="il-table-wrap">
@@ -464,6 +480,12 @@ export function IntakeLabPage() {
                 )}
               </select>
             </div>
+            {piece.shape === "tube" && (
+              <div className="field">
+                <label>Length (in), for pointing / standing</label>
+                <Num value={piece.lengthIn ?? piece.diameterIn} onChange={(v) => updatePiece({ lengthIn: Math.min(48, Math.max(0.5, v)) })} min={0.5} step={0.25} />
+              </div>
+            )}
             <div className="field">
               <label>Carpet friction μ</label>
               <Num value={piece.carpetMu} onChange={(v) => updatePiece({ carpetMu: Math.max(0, v) })} min={0} step={0.05} />

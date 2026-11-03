@@ -88,12 +88,27 @@ ${a.surface.label}: μ ≈ ${f2(mu)}   →   θ must be more than atan(1 ÷ ${f2
           piece shorter than the bumper gets lifted up and over it. The grab-angle rule below is for "under" bars.
         </p>
       )}
+      {analysis.shape.kind === "box" && (
+        <p className="il-callout">
+          The piece is <b>{analysis.shape.hx > analysis.shape.hy ? "pointing at the robot" : "standing on end"}</b>, so from the side it's a{" "}
+          {f2(analysis.shape.hx * 2)} in × {f2(analysis.pieceHeightIn)} in rectangle, not a circle. A roller now meets its <b>top front corner</b> (or, if the
+          roller is lower than the top, its flat end face square on, θ = 0°, which can only shove). Same rule, new geometry: θ is the angle from that corner
+          up to the roller's center. Watch which bar actually does the work in the animation: often it's a low "over" bar lifting the front end, not the
+          front roller.
+        </p>
+      )}
       <pre className="il-formula">
         {th === null
-          ? `${bar.id} never touches a ${f2(config.piece.diameterIn)} in piece rolling on the carpet (it's too high). It can still help once the piece is lifted.`
-          : `first touch, piece on the carpet:  sin θ = (bar height − piece radius) ÷ (piece radius + bar radius)
+          ? `${bar.id} never touches a ${f2(analysis.pieceHeightIn)} in tall piece sliding along the carpet (it's too high). It can still help once the piece is lifted.`
+          : analysis.shape.kind === "circle"
+            ? `first touch, piece on the carpet:  sin θ = (bar height − piece radius) ÷ (piece radius + bar radius)
                                    sin θ = (${f2(bar.yIn)} − ${f2(rp)}) ÷ (${f2(rp)} + ${f2(R)}) = ${f2(Math.sin(rad(th)))}   →   θ = ${f1(th)}°
-${th >= a.minGrabAngleDeg ? `${f1(th)}° > ${f1(a.minGrabAngleDeg)}°  ✓  this bar can grab the piece` : `${f1(th)}° < ${f1(a.minGrabAngleDeg)}°  ✗  this bar will shove the piece away (raise it, or add grip)`}`}
+${th >= a.minGrabAngleDeg ? `${f1(th)}° > ${f1(a.minGrabAngleDeg)}°  ✓  this bar can grab the piece` : `${f1(th)}° < ${f1(a.minGrabAngleDeg)}°  ✗  this bar will shove the piece away (raise it, or add grip)`}`
+            : bar.yIn <= analysis.pieceHeightIn
+              ? `bar height ${f2(bar.yIn)} in ≤ piece height ${f2(analysis.pieceHeightIn)} in  →  it hits the flat end face square on (θ = 0°)  ✗  it can only shove`
+              : `first touch, top front corner:  sin θ = (bar height − piece height) ÷ bar radius
+                                sin θ = (${f2(bar.yIn)} − ${f2(analysis.pieceHeightIn)}) ÷ ${f2(R)} = ${f2(Math.sin(rad(th)))}   →   θ = ${f1(th)}°
+${th >= a.minGrabAngleDeg ? `${f1(th)}° > ${f1(a.minGrabAngleDeg)}°  ✓  this bar can grab the corner` : `${f1(th)}° < ${f1(a.minGrabAngleDeg)}°  ✗  this bar will shove it (needs a bar height between ${f2(analysis.pieceHeightIn + R * Math.sin(rad(a.minGrabAngleDeg)))} and ${f2(analysis.pieceHeightIn + R)} in)`}`}
       </pre>
 
       <h3>3. How high should the front roller's axle be?</h3>

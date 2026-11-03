@@ -1,5 +1,5 @@
 import { useRef, useState, type PointerEvent as ReactPointerEvent, type ReactNode } from "react";
-import { barContact, type ArmAnalysis, type ArmPose, type IntakeAnalysis, type IntakeFrame, type IntakeLabConfig, type IntakeLinkage } from "@frckickoff/shared";
+import { barContact, type ArmAnalysis, type ArmPose, type IntakeAnalysis, type IntakeFrame, type IntakeLabConfig, type IntakeLinkage, type PieceShape } from "@frckickoff/shared";
 
 type JointKey = "a" | "b" | "c" | "d";
 type DragTarget = { kind: "bar"; id: string } | { kind: "piece" } | { kind: "joint"; key: JointKey };
@@ -33,6 +33,9 @@ const SURFACE_COLORS: Record<string, string> = {
   "compliant-wheel": "var(--series-3)",
   "flex-wheel": "var(--series-6)",
   "stealth-wheel": "var(--series-2)",
+  "star-flex-30a": "var(--series-5)",
+  "star-flex-45a": "var(--series-5)",
+  "star-flex-60a": "var(--series-5)",
 };
 
 /** Newtons per inch of arrow length when drawing contact forces */
@@ -49,7 +52,7 @@ export function IntakeCanvas({ config, analysis, frames, frameIndex, focusBarId,
   const rp = config.piece.diameterIn / 2;
   const frame = frames[Math.min(frameIndex, frames.length - 1)];
   const pieceX = frame?.xIn ?? config.pieceStartXIn;
-  const pieceY = frame?.yIn ?? rp;
+  const pieceY = frame?.yIn ?? analysis.pieceHeightIn / 2;
   const isArm = mode === "arm";
   // In arm mode the bars bolted to the intake are drawn where the linkage has them right now.
   const armPose = isArm ? (arm.pose ?? arm.analysis.samples[arm.analysis.samples.length - 1]?.pose ?? null) : null;
@@ -61,16 +64,17 @@ export function IntakeCanvas({ config, analysis, frames, frameIndex, focusBarId,
     ? [arm.linkage.a, arm.linkage.b, ...arm.analysis.paths.flatMap((p) => p.points), ...arm.analysis.samples.flatMap((s) => [s.pose.c, s.pose.d])]
     : [];
 
-  // Keep the view steady while the animation plays: fit everything the piece ever visits.
+  // Keep the view steady while the animation plays: fit everything the piece ever visits (a tumbling tube can point any way).
+  const pieceReach = analysis.shape.kind === "circle" ? analysis.shape.r : Math.hypot(analysis.shape.hx, analysis.shape.hy);
   const barExtents = config.bars.map((b) => ({ b, r: barContact(b, config.surfaces).radiusIn }));
   const xs = [
     -6,
-    config.pieceStartXIn + rp + 2,
+    config.pieceStartXIn + (analysis.shape.kind === "circle" ? rp : analysis.shape.hx) + 2,
     20,
     ...barExtents.flatMap(({ b, r }) => [b.xIn - r - 1, b.xIn + r + 1]),
     ...(isArm ? armPts.flatMap((p) => [p.x - 2, p.x + 2]) : frames.map((f) => f.xIn - rp - 1)),
   ];
-  const ys = [config.bumper.topIn + 3, rp * 2 + 3, ...barExtents.map(({ b, r }) => b.yIn + r + 2), ...(isArm ? armPts.map((p) => Math.min(p.y + 3, 50)) : frames.map((f) => Math.min(f.yIn + rp + 1, 40)))];
+  const ys = [config.bumper.topIn + 3, analysis.pieceHeightIn + 3, ...barExtents.map(({ b, r }) => b.yIn + r + 2), ...(isArm ? armPts.map((p) => Math.min(p.y + 3, 50)) : frames.map((f) => Math.min(f.yIn + pieceReach + 1, 45)))];
   const minX = Math.min(...xs);
   const maxX = Math.max(...xs);
   const maxY = Math.max(...ys);
@@ -99,7 +103,7 @@ export function IntakeCanvas({ config, analysis, frames, frameIndex, focusBarId,
     if (!p) return;
     if (drag.kind === "bar") onMoveBar(drag.id, round1(p.x), round1(Math.max(0.2, p.y)));
     else if (drag.kind === "joint") arm.onMoveJoint(drag.key, round1(p.x), round1(Math.max(0.2, p.y)));
-    else onMovePieceStart(round1(Math.max(config.bumper.depthIn + rp + 0.5, p.x)));
+    else onMovePieceStart(round1(Math.max(config.bumper.depthIn + (analysis.shape.kind === "circle" ? rp : analysis.shape.hx) + 0.5, p.x)));
   }
 
   function endDrag(e: ReactPointerEvent<SVGSVGElement>) {
@@ -113,25 +117,60 @@ export function IntakeCanvas({ config, analysis, frames, frameIndex, focusBarId,
   const focusAnalysis = focus ? analysis.bars.find((a) => a.id === focus.id) : undefined;
   let construction: ReactNode = null;
   if (focus && focusAnalysis && focusAnalysis.firstTouchAngleDeg !== null) {
-    // where the piece is, rolling on the carpet, at the moment it first touches this bar
     const R = focusAnalysis.contactDiameterIn / 2;
-    const reach = rp + R;
     const th = (focusAnalysis.firstTouchAngleDeg * Math.PI) / 180;
-    const cx = focus.xIn + reach * Math.cos(th);
-    const cy = rp;
-    const touchX = cx - rp * Math.cos(th);
-    const touchY = cy + rp * Math.sin(th);
-    const arcR = Math.min(rp * 0.8, 2.2);
+    const grabs = focusAnalysis.firstTouchAngleDeg >= focusAnalysis.minGrabAngleDeg;
+    const arcR = Math.min(Math.max(R * 0.9, 1), 2.2);
+    let ghost: ReactNode;
+    let touchX: number;
+    let touchY: number;
+    // θ is measured at this point, from level, up to the line toward the bar's center
+    let arcCx: number;
+    let arcCy: number;
+    if (analysis.shape.kind === "circle") {
+      // where the piece is, rolling on the carpet, at the moment it first touches this bar
+      const reach = rp + R;
+      const cx = focus.xIn + reach * Math.cos(th);
+      touchX = cx - rp * Math.cos(th);
+      touchY = rp + rp * Math.sin(th);
+      arcCx = cx;
+      arcCy = rp;
+      ghost = (
+        <>
+          <circle cx={cx} cy={-rp} r={rp} className="il-ghost" />
+          <line x1={cx - rp - 1} y1={-rp} x2={cx + rp + 0.5} y2={-rp} className="il-dash" />
+          <line x1={cx} y1={-rp} x2={focus.xIn} y2={-focus.yIn} className="il-dash" />
+        </>
+      );
+    } else {
+      // a box: the bar meets its top front corner (or its flat end face when θ = 0)
+      const H = analysis.pieceHeightIn;
+      const W = analysis.shape.hx * 2;
+      touchX = focus.xIn + R * Math.cos(th);
+      touchY = focus.yIn - R * Math.sin(th);
+      arcCx = touchX;
+      arcCy = touchY;
+      ghost = (
+        <>
+          <rect x={touchX} y={-H} width={W} height={H} className="il-ghost" />
+          <line x1={touchX - 2} y1={-touchY} x2={touchX + 1} y2={-touchY} className="il-dash" />
+          <line x1={touchX} y1={-touchY} x2={focus.xIn} y2={-focus.yIn} className="il-dash" />
+        </>
+      );
+    }
     construction = (
       <g className="il-construction">
-        <circle cx={cx} cy={-cy} r={rp} className="il-ghost" />
-        <line x1={cx - rp - 1} y1={-cy} x2={cx + rp + 0.5} y2={-cy} className="il-dash" />
-        <line x1={cx} y1={-cy} x2={focus.xIn} y2={-focus.yIn} className="il-dash" />
-        <path d={`M ${cx - arcR} ${-cy} A ${arcR} ${arcR} 0 0 1 ${cx - arcR * Math.cos(th)} ${-(cy + arcR * Math.sin(th))}`} className="il-arc" />
-        <text x={cx - arcR - 0.3} y={-cy - 0.4} className="il-small" textAnchor="end">
+        {ghost}
+        {th > 0.01 && (
+          <path
+            d={`M ${arcCx - arcR} ${-arcCy} A ${arcR} ${arcR} 0 0 1 ${arcCx - arcR * Math.cos(th)} ${-(arcCy + arcR * Math.sin(th))}`}
+            className="il-arc"
+          />
+        )}
+        <text x={arcCx - arcR - 0.3} y={-arcCy - 0.4} className="il-small" textAnchor="end">
           θ = {focusAnalysis.firstTouchAngleDeg.toFixed(0)}°
         </text>
-        <circle cx={touchX} cy={-touchY} r={0.28} className={focusAnalysis.firstTouchAngleDeg >= focusAnalysis.minGrabAngleDeg ? "il-dot-good" : "il-dot-bad"} />
+        <circle cx={touchX} cy={-touchY} r={0.28} className={grabs ? "il-dot-good" : "il-dot-bad"} />
       </g>
     );
   }
@@ -212,7 +251,17 @@ export function IntakeCanvas({ config, analysis, frames, frameIndex, focusBarId,
         const hasWheels = b.wheelOdIn > 0;
         return (
           <g key={b.id} className={isArm ? "il-bar-static" : "il-bar"} onPointerDown={isArm ? undefined : startDrag({ kind: "bar", id: b.id })}>
-            {hasWheels && <circle cx={b.xIn} cy={-b.yIn} r={b.wheelOdIn / 2} className="il-wheel" style={{ stroke: SURFACE_COLORS[b.wheelSurface] }} />}
+            {hasWheels &&
+              (b.wheelSurface.startsWith("star-flex") ? (
+                <polygon
+                  points={starPoints(b.xIn, -b.yIn, b.wheelOdIn / 2, b.tubeOdIn / 2 + 0.15, 8)}
+                  transform={`rotate(${spinDeg} ${b.xIn} ${-b.yIn})`}
+                  className="il-wheel il-star"
+                  style={{ stroke: SURFACE_COLORS[b.wheelSurface] }}
+                />
+              ) : (
+                <circle cx={b.xIn} cy={-b.yIn} r={b.wheelOdIn / 2} className="il-wheel" style={{ stroke: SURFACE_COLORS[b.wheelSurface] }} />
+              ))}
             <circle cx={b.xIn} cy={-b.yIn} r={b.tubeOdIn / 2} className="il-tube" style={{ stroke: tubeColor }} />
             <line
               x1={b.xIn}
@@ -234,12 +283,8 @@ export function IntakeCanvas({ config, analysis, frames, frameIndex, focusBarId,
       {/* the game piece (start position ghost + current frame) */}
       {!isArm && (
       <>
-      <circle cx={config.pieceStartXIn} cy={-rp} r={rp} className="il-start" onPointerDown={startDrag({ kind: "piece" })} />
-      <g transform={`rotate(${((frame?.angleRad ?? 0) * -180) / Math.PI} ${pieceX} ${-pieceY})`}>
-        <circle cx={pieceX} cy={-pieceY} r={rp} className="il-piece" />
-        <circle cx={pieceX} cy={-pieceY} r={rp * 0.78} className="il-piece-inner" />
-        <line x1={pieceX} y1={-pieceY} x2={pieceX + rp * 0.78} y2={-pieceY} className="il-piece-mark" />
-      </g>
+      <PieceGlyph shape={analysis.shape} x={config.pieceStartXIn} y={analysis.pieceHeightIn / 2} angle={0} start onPointerDown={startDrag({ kind: "piece" })} />
+      <PieceGlyph shape={analysis.shape} x={pieceX} y={pieceY} angle={frame?.angleRad ?? 0} />
       </>
       )}
 
@@ -338,4 +383,51 @@ function convexHull(points: { x: number; y: number }[]): { x: number; y: number 
     upper.push(p);
   }
   return [...lower.slice(0, -1), ...upper.slice(0, -1)];
+}
+
+/** Star wheel outline: `points` tips at radius `outer`, valleys at `inner`. */
+function starPoints(cx: number, cy: number, outer: number, inner: number, points: number): string {
+  const pts: string[] = [];
+  for (let i = 0; i < points * 2; i++) {
+    const r = i % 2 === 0 ? outer : Math.max(inner, outer * 0.45);
+    const a = (Math.PI * i) / points;
+    pts.push(`${cx + r * Math.cos(a)},${cy + r * Math.sin(a)}`);
+  }
+  return pts.join(" ");
+}
+
+/** The game piece seen from the side: a circle (lying sideways / a ball) or a tube pointing at the robot / standing up. */
+function PieceGlyph({ shape, x, y, angle, start = false, onPointerDown }: { shape: PieceShape; x: number; y: number; angle: number; start?: boolean; onPointerDown?: (e: ReactPointerEvent<SVGElement>) => void }) {
+  const rot = `rotate(${(angle * -180) / Math.PI} ${x} ${-y})`;
+  if (shape.kind === "circle") {
+    if (start) return <circle cx={x} cy={-y} r={shape.r} className="il-start" onPointerDown={onPointerDown} />;
+    return (
+      <g transform={rot}>
+        <circle cx={x} cy={-y} r={shape.r} className="il-piece" />
+        <circle cx={x} cy={-y} r={shape.r * 0.78} className="il-piece-inner" />
+        <line x1={x} y1={-y} x2={x + shape.r * 0.78} y2={-y} className="il-piece-mark" />
+      </g>
+    );
+  }
+  const { hx, hy } = shape;
+  if (start) return <rect x={x - hx} y={-y - hy} width={hx * 2} height={hy * 2} rx={0.15} className="il-start" onPointerDown={onPointerDown} />;
+  // the tube's wall lines run along its long side
+  const alongX = hx >= hy;
+  const wall = (alongX ? hy : hx) * 0.78;
+  return (
+    <g transform={rot}>
+      <rect x={x - hx} y={-y - hy} width={hx * 2} height={hy * 2} rx={0.15} className="il-piece" />
+      {alongX ? (
+        <>
+          <line x1={x - hx} y1={-y - wall} x2={x + hx} y2={-y - wall} className="il-piece-inner" />
+          <line x1={x - hx} y1={-y + wall} x2={x + hx} y2={-y + wall} className="il-piece-inner" />
+        </>
+      ) : (
+        <>
+          <line x1={x - wall} y1={-y - hy} x2={x - wall} y2={-y + hy} className="il-piece-inner" />
+          <line x1={x + wall} y1={-y - hy} x2={x + wall} y2={-y + hy} className="il-piece-inner" />
+        </>
+      )}
+    </g>
+  );
 }

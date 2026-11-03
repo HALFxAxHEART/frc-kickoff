@@ -690,3 +690,4 @@ textarea.autogrow {
 .il-chart .dot { fill: var(--series-1); stroke: var(--surface); stroke-width: 2; }
 .il-chart-tip { position: absolute; pointer-events: none; background: var(--surface-raised); border: 1px solid var(--border); border-radius: 6px; padding: 4px 8px; font-size: 0.8rem; white-space: nowrap; transform: translate(-50%, -110%); }
 .il-chart-wrap { position: relative; }
+.il-star { stroke-dasharray: none; stroke-width: 0.12; fill-opacity: 0.35; }

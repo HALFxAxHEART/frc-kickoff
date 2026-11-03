@@ -13,7 +13,16 @@ import { INCH_TO_M, LB_TO_KG } from "./units";
  * pieces that stall in a pinch, and roller motors that bog down when there's too much squish.
  */
 
-export type RollerSurfaceId = "poly-bare" | "poly-grip" | "poly-silicone" | "compliant-wheel" | "flex-wheel" | "stealth-wheel";
+export type RollerSurfaceId =
+  | "poly-bare"
+  | "poly-grip"
+  | "poly-silicone"
+  | "compliant-wheel"
+  | "flex-wheel"
+  | "star-flex-30a"
+  | "star-flex-45a"
+  | "star-flex-60a"
+  | "stealth-wheel";
 
 export interface RollerSurfaceSpec {
   id: RollerSurfaceId;
@@ -33,6 +42,10 @@ export const ROLLER_SURFACES: RollerSurfaceSpec[] = [
   { id: "poly-silicone", label: "Polycarb tube + silicone sleeve", kind: "tube", mu: 1.0, stiffnessNPerM: 6000, note: "Grippy and a little soft. Sleeves can roll or tear at the ends: glue or tape them." },
   { id: "compliant-wheel", label: "Compliant wheels", kind: "wheel", mu: 1.0, stiffnessNPerM: 2500, note: "Soft rubber-like wheels: lots of squish, forgiving height. Wear over a season." },
   { id: "flex-wheel", label: "Flex wheels", kind: "wheel", mu: 1.1, stiffnessNPerM: 5000, note: "Spoked urethane wheels: grippy, medium squish, very durable." },
+  // WCP Star Flex Wheels: silicone, 30A / 45A / 60A, 1.625-4 in on 1/2 in hex (and 5 in). The points bend, so they squish a lot for their size.
+  { id: "star-flex-30a", label: "WCP Star Flex wheels, 30A (soft)", kind: "wheel", mu: 1.2, stiffnessNPerM: 1500, note: "Silicone stars that fold around the piece. Most grip and squish; wears fastest." },
+  { id: "star-flex-45a", label: "WCP Star Flex wheels, 45A (medium)", kind: "wheel", mu: 1.1, stiffnessNPerM: 3000, note: "The middle choice: good grip, holds its shape. A sensible first pick." },
+  { id: "star-flex-60a", label: "WCP Star Flex wheels, 60A (hard)", kind: "wheel", mu: 1.0, stiffnessNPerM: 6000, note: "Stiffer points: less squish, longest life. Good for feeders and funnels." },
   { id: "stealth-wheel", label: "Stealth (hard urethane) wheels", kind: "wheel", mu: 0.6, stiffnessNPerM: 40000, note: "Hard and smooth. 4795 found them too slippery on coral in 2025." },
 ];
 
@@ -53,10 +66,25 @@ export interface GamePieceSpec {
   stiffnessNPerM: number;
   /** Friction of the piece sliding on carpet */
   carpetMu: number;
+  /** Tubes only: how long the tube is (coral: 11-7/8 in). Used when it points at the robot or stands up. */
+  lengthIn?: number;
+}
+
+/** Which way a tube lies on the carpet, as seen from the side of the robot. */
+export type PieceOrientation = "sideways" | "end-on" | "standing";
+
+/** The piece as the simulator sees it from the side: a circle, or a box (half-width hx along x, half-height hy). */
+export type PieceShape = { kind: "circle"; r: number } | { kind: "box"; hx: number; hy: number };
+
+export function pieceShapeIn(piece: GamePieceSpec, orientation: PieceOrientation = "sideways"): PieceShape {
+  const r = piece.diameterIn / 2;
+  const len = piece.lengthIn ?? 0;
+  if (piece.shape !== "tube" || orientation === "sideways" || len <= piece.diameterIn) return { kind: "circle", r };
+  return orientation === "end-on" ? { kind: "box", hx: len / 2, hy: r } : { kind: "box", hx: r, hy: len / 2 };
 }
 
 export const GAME_PIECE_PRESETS: GamePieceSpec[] = [
-  { id: "coral-2025", name: "Coral (2025)", diameterIn: 4.5, weightLb: 1.5, shape: "tube", stiffnessNPerM: 200000, carpetMu: 0.4 },
+  { id: "coral-2025", name: "Coral (2025)", diameterIn: 4.5, weightLb: 1.5, shape: "tube", stiffnessNPerM: 200000, carpetMu: 0.4, lengthIn: 11.875 },
   { id: "cargo-2022", name: "Cargo (2022)", diameterIn: 9.5, weightLb: 0.6, shape: "ball", stiffnessNPerM: 6000, carpetMu: 0.6 },
 ];
 
@@ -89,6 +117,8 @@ export interface IntakeLabConfig {
   bumper: { depthIn: number; bottomIn: number; topIn: number };
   /** Optional measured friction/stiffness values that replace the built-in estimates */
   surfaces?: RollerSurfaceSpec[];
+  /** How a tube-shaped piece lies on the carpet (balls ignore this) */
+  orientation?: PieceOrientation;
   maxTimeS?: number;
 }
 
@@ -111,8 +141,9 @@ export interface BarAnalysis {
   speedRatioToDrive: number;
   /** Smallest contact angle where friction can win: atan(1 / mu) */
   minGrabAngleDeg: number;
-  /** Angle above level of the line from the piece's center to the bar's center, at first touch with a piece on the carpet.
-   *  null = the bar never touches a piece rolling along the carpet (too high). */
+  /** Angle above level of the contact line (from where it touches the piece to the bar's center), at first touch with a
+   *  piece on the carpet. Sideways tube/ball: from the piece's center. End-on / standing tube: from the top front corner.
+   *  0 = it hits the flat end face square on. null = the bar never touches the piece (too high). */
   firstTouchAngleDeg: number | null;
   /** How much the piece on the carpet would have to squish to pass under this bar (inches, <= 0 means it fits without touching) */
   floorSquishIn: number;
@@ -120,6 +151,9 @@ export interface BarAnalysis {
 
 export interface IntakeAnalysis {
   bars: BarAnalysis[];
+  shape: PieceShape;
+  /** How tall the piece is on the carpet (in) */
+  pieceHeightIn: number;
   /** The bar a piece on the carpet hits first (furthest forward that it can touch) */
   frontBarId: string | null;
   /** Pinch points: an "under" bar and an "over" bar close enough that the piece squeezes between them */
@@ -129,14 +163,23 @@ export interface IntakeAnalysis {
 export function analyzeIntake(cfg: IntakeLabConfig): IntakeAnalysis {
   const motor = getMotor(cfg.rollerMotorId);
   const rp = cfg.piece.diameterIn / 2;
+  const shape = pieceShapeIn(cfg.piece, cfg.orientation);
+  const pieceHeightIn = shape.kind === "circle" ? shape.r * 2 : shape.hy * 2;
   const driveInPerSec = Math.max(cfg.driveSpeedFtPerSec * 12, 1e-6);
   const bars: BarAnalysis[] = cfg.bars.map((bar) => {
     const { radiusIn, surface } = barContact(bar, cfg.surfaces);
     const freeRpm = (motor.freeSpeedRPM * cfg.rollerOutput) / Math.max(bar.ratio, 1e-6);
     const surfaceInPerSec = (Math.PI * 2 * radiusIn * freeRpm) / 60;
-    const reach = rp + radiusIn;
-    const dy = bar.yIn - rp;
-    const firstTouchAngleDeg = Math.abs(dy) < reach ? (Math.asin(dy / reach) * 180) / Math.PI : null;
+    let firstTouchAngleDeg: number | null;
+    if (shape.kind === "circle") {
+      const reach = rp + radiusIn;
+      const dy = bar.yIn - rp;
+      firstTouchAngleDeg = Math.abs(dy) < reach ? (Math.asin(dy / reach) * 180) / Math.PI : null;
+    } else {
+      // a box sliding in: the bar meets its top front corner (or its flat end face if the bar is lower than the top)
+      const above = bar.yIn - pieceHeightIn;
+      firstTouchAngleDeg = above >= radiusIn ? null : above <= 0 ? (bar.yIn + radiusIn > 0 ? 0 : null) : (Math.asin(above / radiusIn) * 180) / Math.PI;
+    }
     return {
       id: bar.id,
       contactDiameterIn: radiusIn * 2,
@@ -146,7 +189,7 @@ export function analyzeIntake(cfg: IntakeLabConfig): IntakeAnalysis {
       speedRatioToDrive: surfaceInPerSec / driveInPerSec,
       minGrabAngleDeg: (Math.atan(1 / surface.mu) * 180) / Math.PI,
       firstTouchAngleDeg,
-      floorSquishIn: cfg.piece.diameterIn - (bar.yIn - radiusIn),
+      floorSquishIn: pieceHeightIn - (bar.yIn - radiusIn),
     };
   });
   const touchable = cfg.bars
@@ -163,7 +206,7 @@ export function analyzeIntake(cfg: IntakeLabConfig): IntakeAnalysis {
       if (gap < cfg.piece.diameterIn + 0.5) gaps.push({ fromId: a.id, toId: b.id, gapIn: gap, squishIn: cfg.piece.diameterIn - gap });
     }
   }
-  return { bars, frontBarId: touchable[0]?.b.id ?? null, gaps };
+  return { bars, shape, pieceHeightIn, frontBarId: touchable[0]?.b.id ?? null, gaps };
 }
 
 // ---------------------------------------------------------------------------------------------
@@ -213,9 +256,20 @@ const G = 9.81;
 
 export function simulateIntake(cfg: IntakeLabConfig): IntakeSimResult {
   const motor = getMotor(cfg.rollerMotorId);
+  const shapeIn = pieceShapeIn(cfg.piece, cfg.orientation);
+  const shape: PieceShape =
+    shapeIn.kind === "circle" ? { kind: "circle", r: shapeIn.r * INCH_TO_M } : { kind: "box", hx: shapeIn.hx * INCH_TO_M, hy: shapeIn.hy * INCH_TO_M };
   const rp = (cfg.piece.diameterIn / 2) * INCH_TO_M;
+  /** half-height of the piece as it sits on the carpet */
+  const restHalfHeight = shape.kind === "circle" ? shape.r : shape.hy;
   const m = Math.max(cfg.piece.weightLb * LB_TO_KG, 0.01);
-  const I = cfg.piece.shape === "tube" ? m * rp * rp : (2 / 3) * m * rp * rp;
+  let I: number;
+  if (shape.kind === "circle") I = cfg.piece.shape === "tube" ? m * rp * rp : (2 / 3) * m * rp * rp;
+  else {
+    // a thin-walled tube tumbling end over end: m (r^2 / 2 + L^2 / 12)
+    const len = (cfg.piece.lengthIn ?? cfg.piece.diameterIn) * INCH_TO_M;
+    I = m * ((rp * rp) / 2 + (len * len) / 12);
+  }
   const vFloor = -cfg.driveSpeedFtPerSec * 0.3048;
   const bumper = {
     x0: 0,
@@ -241,7 +295,7 @@ export function simulateIntake(cfg: IntakeLabConfig): IntakeSimResult {
 
   // state
   let x = cfg.pieceStartXIn * INCH_TO_M;
-  let y = rp;
+  let y = restHalfHeight;
   let vx = 0;
   let vy = 0;
   let w = 0;
@@ -274,16 +328,26 @@ export function simulateIntake(cfg: IntakeLabConfig): IntakeSimResult {
     let torque = 0;
     let stepLoad = 0;
     const contacts: ContactForce[] = [];
+    const cosA = Math.cos(angle);
+    const sinA = Math.sin(angle);
+    // body frame <-> world helpers (box shape)
+    const toLocal = (px: number, py: number) => ({ x: (px - x) * cosA + (py - y) * sinA, y: -(px - x) * sinA + (py - y) * cosA });
+    const toWorld = (lx: number, ly: number) => ({ x: x + lx * cosA - ly * sinA, y: y + lx * sinA + ly * cosA });
 
-    // generic circle-vs-surface contact. n = unit normal pointing from the surface into the piece.
-    const contact = (who: string, nx: number, ny: number, depth: number, k: number, mu: number, surfVx: number, surfVy: number): number => {
+    /**
+     * One contact. (px, py) = the touching point on the piece, (nx, ny) = unit normal pushing INTO the piece,
+     * depth = overlap. Spring + damper along n, friction (up to mu * N) along the surface.
+     */
+    const contact = (who: string, px: number, py: number, nx: number, ny: number, depth: number, k: number, mu: number, surfVx: number, surfVy: number): number => {
+      const rx = px - x;
+      const ry = py - y;
+      // velocity of the piece's material at the contact point: v + w x r
+      const pvx = vx - w * ry;
+      const pvy = vy + w * rx;
       const c = 2 * 0.4 * Math.sqrt(k * m);
-      const depthRate = -(vx * nx + vy * ny);
+      const depthRate = -(pvx * nx + pvy * ny);
       const N = Math.max(0, k * depth + c * depthRate);
       if (N <= 0) return 0;
-      // velocity of the piece's surface at the contact point (contact point = center - rp * n)
-      const pvx = vx + w * rp * ny;
-      const pvy = vy - w * rp * nx;
       const tx = -ny;
       const ty = nx;
       const vt = (pvx - surfVx) * tx + (pvy - surfVy) * ty;
@@ -292,40 +356,129 @@ export function simulateIntake(cfg: IntakeLabConfig): IntakeSimResult {
       const Fy = N * ny + Ft * ty;
       fx += Fx;
       fy += Fy;
-      torque += -rp * Ft;
-      contacts.push({ with: who, xIn: (x - rp * nx) / INCH_TO_M, yIn: (y - rp * ny) / INCH_TO_M, fx: Fx, fy: Fy });
+      torque += rx * Fy - ry * Fx;
+      contacts.push({ with: who, xIn: px / INCH_TO_M, yIn: py / INCH_TO_M, fx: Fx, fy: Fy });
       return Ft;
     };
 
+    const corners =
+      shape.kind === "box"
+        ? [
+            toWorld(-shape.hx, -shape.hy),
+            toWorld(shape.hx, -shape.hy),
+            toWorld(shape.hx, shape.hy),
+            toWorld(-shape.hx, shape.hy),
+          ]
+        : [];
+
     // carpet
-    if (y < rp) contact("floor", 0, 1, rp - y, kFloor, cfg.piece.carpetMu, vFloor, 0);
+    if (shape.kind === "circle") {
+      if (y < shape.r) contact("floor", x, y - shape.r, 0, 1, shape.r - y, kFloor, cfg.piece.carpetMu, vFloor, 0);
+    } else {
+      for (const p of corners) if (p.y < 0) contact("floor", p.x, p.y, 0, 1, -p.y, kFloor, cfg.piece.carpetMu, vFloor, 0);
+    }
 
     // bumper (axis-aligned box, fixed to the robot)
-    {
+    if (shape.kind === "circle") {
       const qx = Math.min(Math.max(x, bumper.x0), bumper.x1);
       const qy = Math.min(Math.max(y, bumper.y0), bumper.y1);
       const dx = x - qx;
       const dy = y - qy;
       const d = Math.hypot(dx, dy);
-      if (d < rp && d > 1e-9) contact("bumper", dx / d, dy / d, rp - d, kBumper, 0.4, 0, 0);
+      if (d < shape.r && d > 1e-9) contact("bumper", x - (dx / d) * shape.r, y - (dy / d) * shape.r, dx / d, dy / d, shape.r - d, kBumper, 0.4, 0, 0);
+    } else {
+      // piece corners poking into the bumper: push out the shortest way
+      for (const p of corners) {
+        if (p.x <= bumper.x0 || p.x >= bumper.x1 || p.y <= bumper.y0 || p.y >= bumper.y1) continue;
+        const outs = [
+          { d: p.x - bumper.x0, nx: -1, ny: 0 },
+          { d: bumper.x1 - p.x, nx: 1, ny: 0 },
+          { d: p.y - bumper.y0, nx: 0, ny: -1 },
+          { d: bumper.y1 - p.y, nx: 0, ny: 1 },
+        ].sort((u, v) => u.d - v.d)[0]!;
+        contact("bumper", p.x, p.y, outs.nx, outs.ny, outs.d, kBumper, 0.4, 0, 0);
+      }
+      // bumper corners poking into the piece: push the piece off along its nearest face
+      for (const [bx, by] of [
+        [bumper.x0, bumper.y0],
+        [bumper.x1, bumper.y0],
+        [bumper.x1, bumper.y1],
+        [bumper.x0, bumper.y1],
+      ] as const) {
+        const l = toLocal(bx, by);
+        if (Math.abs(l.x) >= shape.hx || Math.abs(l.y) >= shape.hy) continue;
+        const dxFace = shape.hx - Math.abs(l.x);
+        const dyFace = shape.hy - Math.abs(l.y);
+        // outward normal of the piece face nearest the corner; the push on the piece is the opposite way
+        const ln = dxFace < dyFace ? { x: Math.sign(l.x) || 1, y: 0 } : { x: 0, y: Math.sign(l.y) || 1 };
+        const nWorld = { x: -(ln.x * cosA - ln.y * sinA), y: -(ln.x * sinA + ln.y * cosA) };
+        contact("bumper", bx, by, nWorld.x, nWorld.y, Math.min(dxFace, dyFace), kBumper, 0.4, 0, 0);
+      }
     }
 
     // bars
     const barSpeed = motorFreeRad * motorSpeedFrac;
     for (const b of bars) {
-      const dx = x - b.x;
-      const dy = y - b.y;
-      const d = Math.hypot(dx, dy);
-      const depth = rp + b.r - d;
-      if (depth <= 0 || d < 1e-9) continue;
-      const nx = dx / d;
-      const ny = dy / d;
+      // closest point on the piece to the bar's center, and the normal from the bar into the piece
+      let qx: number;
+      let qy: number;
+      let nx: number;
+      let ny: number;
+      let depth: number;
+      if (shape.kind === "circle") {
+        const dx = x - b.x;
+        const dy = y - b.y;
+        const d = Math.hypot(dx, dy);
+        depth = shape.r + b.r - d;
+        if (depth <= 0 || d < 1e-9) continue;
+        nx = dx / d;
+        ny = dy / d;
+        qx = x - nx * shape.r;
+        qy = y - ny * shape.r;
+      } else {
+        const l = toLocal(b.x, b.y);
+        const cx = Math.min(Math.max(l.x, -shape.hx), shape.hx);
+        const cy = Math.min(Math.max(l.y, -shape.hy), shape.hy);
+        let lnx = cx - l.x;
+        let lny = cy - l.y;
+        let d = Math.hypot(lnx, lny);
+        let lqx = cx;
+        let lqy = cy;
+        if (d < 1e-9) {
+          // bar center inside the box: push out through the nearest face
+          const dxFace = shape.hx - Math.abs(l.x);
+          const dyFace = shape.hy - Math.abs(l.y);
+          if (dxFace < dyFace) {
+            lqx = Math.sign(l.x || 1) * shape.hx;
+            lqy = l.y;
+            lnx = -Math.sign(l.x || 1);
+            lny = 0;
+            d = -dxFace;
+          } else {
+            lqx = l.x;
+            lqy = Math.sign(l.y || 1) * shape.hy;
+            lnx = 0;
+            lny = -Math.sign(l.y || 1);
+            d = -dyFace;
+          }
+        } else {
+          lnx /= d;
+          lny /= d;
+        }
+        depth = b.r - d;
+        if (depth <= 0) continue;
+        const wq = toWorld(lqx, lqy);
+        qx = wq.x;
+        qy = wq.y;
+        nx = lnx * cosA - lny * sinA;
+        ny = lnx * sinA + lny * cosA;
+      }
       const omega = (b.spin * barSpeed) / b.ratio;
       // bar surface velocity at the point facing the piece: omega x (r * n)
       const sx = -omega * b.r * ny;
       const sy = omega * b.r * nx;
       const before = contacts.length;
-      const Ft = contact(b.id, nx, ny, depth, b.k, b.mu, sx, sy);
+      const Ft = contact(b.id, qx, qy, nx, ny, depth, b.k, b.mu, sx, sy);
       if (contacts.length > before) {
         const c = contacts[contacts.length - 1]!;
         const push = Math.hypot(c.fx, c.fy);
@@ -359,11 +512,11 @@ export function simulateIntake(cfg: IntakeLabConfig): IntakeSimResult {
     }
 
     // outcome checks
-    if (x < -rp * 0.2 && y > bumper.y0) {
+    if (x < -rp * 0.2 && y > bumper.y0 + restHalfHeight * 0.5) {
       outcome = { kind: "in", timeS: t };
       break;
     }
-    if (x < bumper.x0 + rp && y < bumper.y1 && firstBarTouchT === null && t > 0.2 && Math.abs(vx) < 0.05) {
+    if (x < bumper.x1 + (shape.kind === "circle" ? shape.r : shape.hx) + 0.02 && y < bumper.y1 && firstBarTouchT === null && t > 0.2 && Math.abs(vx) < 0.05) {
       outcome = { kind: "missed", timeS: t };
       break;
     }

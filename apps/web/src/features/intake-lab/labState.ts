@@ -7,6 +7,7 @@ import {
   type IntakeBar,
   type IntakeLabConfig,
   type IntakeLinkage,
+  type PieceOrientation,
   type RollerSurfaceSpec,
 } from "@frckickoff/shared";
 
@@ -23,6 +24,8 @@ export interface LabState {
   surfaces: RollerSurfaceSpec[];
   linkage: IntakeLinkage;
   armDrive: IntakeArmDrive;
+  /** how a tube-shaped piece lies on the carpet for the pickup test */
+  orientation: PieceOrientation;
 }
 
 const bar = (id: string, xIn: number, yIn: number, passes: IntakeBar["passes"]): IntakeBar => ({
@@ -69,10 +72,21 @@ export function defaultLabState(): LabState {
     surfaces: ROLLER_SURFACES.map((s) => ({ ...s })),
     linkage: defaultLinkage(),
     armDrive: defaultArmDrive(),
+    orientation: "sideways",
   };
 }
 
-const surfaceId = z.enum(["poly-bare", "poly-grip", "poly-silicone", "compliant-wheel", "flex-wheel", "stealth-wheel"]);
+const surfaceId = z.enum([
+  "poly-bare",
+  "poly-grip",
+  "poly-silicone",
+  "compliant-wheel",
+  "flex-wheel",
+  "star-flex-30a",
+  "star-flex-45a",
+  "star-flex-60a",
+  "stealth-wheel",
+]);
 const pt = z.object({ x: z.number(), y: z.number() });
 const labSchema = z.object({
   pieces: z
@@ -85,6 +99,7 @@ const labSchema = z.object({
         shape: z.enum(["tube", "ball"]),
         stiffnessNPerM: z.number(),
         carpetMu: z.number(),
+        lengthIn: z.number().optional(),
       }),
     )
     .min(1),
@@ -135,6 +150,7 @@ const labSchema = z.object({
     })
     .optional()
     .transform((v) => v ?? defaultArmDrive()),
+  orientation: z.enum(["sideways", "end-on", "standing"]).optional().transform((v) => v ?? "sideways"),
 });
 
 const STORAGE_KEY = "intake-lab-v1";
@@ -144,7 +160,14 @@ export function loadLabState(): LabState {
   if (!raw) return defaultLabState();
   try {
     const parsed = labSchema.safeParse(JSON.parse(raw));
-    if (parsed.success) return parsed.data satisfies LabState;
+    if (parsed.success) {
+      const data: LabState = parsed.data;
+      // surfaces added after this setup was saved (e.g. WCP Star Flex) get their default numbers
+      const missing = ROLLER_SURFACES.filter((d) => !data.surfaces.some((s) => s.id === d.id)).map((d) => ({ ...d }));
+      // coral saved before tubes had a length gets its real length back
+      const pieces = data.pieces.map((p) => (p.id === "coral-2025" && p.lengthIn === undefined ? { ...p, lengthIn: 11.875 } : p));
+      return { ...data, pieces, surfaces: [...data.surfaces, ...missing] };
+    }
     console.warn("Intake Lab: saved setup didn't match the current format, starting fresh", parsed.error);
   } catch (err) {
     console.warn("Intake Lab: couldn't read saved setup, starting fresh", err);
@@ -170,6 +193,7 @@ export function toConfig(state: LabState): IntakeLabConfig {
     rollerOutput: state.rollerOutput,
     bumper: state.bumper,
     surfaces: state.surfaces,
+    orientation: state.orientation,
   };
 }
 
