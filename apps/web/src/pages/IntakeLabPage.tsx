@@ -1,19 +1,25 @@
 import { useDeferredValue, useEffect, useMemo, useRef, useState } from "react";
 import { Link } from "react-router-dom";
 import {
+  analyzeArm,
   analyzeIntake,
   barContact,
+  simulateArmMove,
   MOTOR_SPECS,
   ROLLER_SURFACES,
   simulateIntake,
   type GamePieceSpec,
+  type IntakeArmDrive,
   type IntakeBar,
+  type IntakeLinkage,
   type IntakeOutcome,
   type RollerSurfaceId,
   type RollerSurfaceSpec,
 } from "@frckickoff/shared";
 import { IntakeCanvas } from "../features/intake-lab/IntakeCanvas";
 import { IntakeMath } from "../features/intake-lab/IntakeMath";
+import { ArmPanel } from "../features/intake-lab/ArmPanel";
+import { Num } from "../features/intake-lab/Num";
 import {
   activePiece,
   defaultLabState,
@@ -58,32 +64,6 @@ function outcomeText(o: IntakeOutcome): { text: string; good: boolean } {
   }
 }
 
-/** A number box that lets you type freely (e.g. "-" or "1.") and only commits real numbers. */
-function Num({ value, onChange, step = 0.1, min, max, width }: { value: number; onChange: (v: number) => void; step?: number; min?: number; max?: number; width?: string }) {
-  const [text, setText] = useState(String(value));
-  const [focused, setFocused] = useState(false);
-  useEffect(() => {
-    if (!focused) setText(String(value));
-  }, [value, focused]);
-  return (
-    <input
-      type="number"
-      step={step}
-      min={min}
-      max={max}
-      value={text}
-      style={width ? { width } : undefined}
-      onFocus={() => setFocused(true)}
-      onBlur={() => setFocused(false)}
-      onChange={(e) => {
-        setText(e.target.value);
-        const v = Number(e.target.value);
-        if (e.target.value.trim() !== "" && Number.isFinite(v)) onChange(v);
-      }}
-    />
-  );
-}
-
 export function IntakeLabPage() {
   const [state, setState] = useState<LabState>(loadLabState);
   const [focusBarId, setFocusBarId] = useState<string | null>(state.bars[0]?.id ?? null);
@@ -91,6 +71,8 @@ export function IntakeLabPage() {
   const [playing, setPlaying] = useState(true);
   const [slowMo, setSlowMo] = useState(0.5);
   const [frameIndex, setFrameIndex] = useState(0);
+  const [mode, setMode] = useState<"pickup" | "arm">("pickup");
+  const [armDir, setArmDir] = useState<"deploy" | "stow">("deploy");
 
   useEffect(() => saveLabState(state), [state]);
 
@@ -100,12 +82,22 @@ export function IntakeLabPage() {
   const sim = useMemo(() => simulateIntake(deferredConfig), [deferredConfig]);
   const piece = activePiece(state);
   const outcome = outcomeText(sim.outcome);
+  const armAnalysis = useMemo(
+    () => analyzeArm(state.linkage, state.armDrive, state.bars, state.bumper, state.surfaces),
+    [state.linkage, state.armDrive, state.bars, state.bumper, state.surfaces],
+  );
+  const deployMove = useMemo(() => simulateArmMove(armAnalysis, state.armDrive, "deploy"), [armAnalysis, state.armDrive]);
+  const stowMove = useMemo(() => simulateArmMove(armAnalysis, state.armDrive, "stow"), [armAnalysis, state.armDrive]);
+  const armMove = armDir === "deploy" ? deployMove : stowMove;
+  // what the playback bar is animating right now
+  const frameTimes = mode === "pickup" ? sim.frames.map((f) => f.t) : armMove.frames.map((f) => f.t);
+  const frameCount = Math.max(1, frameTimes.length);
 
   // Restart the animation whenever the result changes (but hold still while dragging).
   useEffect(() => {
     setFrameIndex(0);
     setPlaying(!dragging);
-  }, [sim, dragging]);
+  }, [sim, armMove, mode, dragging]);
 
   // Play back the recorded frames in (slowed-down) real time.
   const frameRef = useRef(0);
@@ -115,7 +107,7 @@ export function IntakeLabPage() {
     let raf = 0;
     let acc = 0;
     let last: number | null = null;
-    const lastIndex = sim.frames.length - 1;
+    const lastIndex = frameCount - 1;
     const tick = (now: number) => {
       if (last !== null) acc += ((now - last) / 1000) * slowMo * 120; // frames are recorded at 120 per sim-second
       last = now;
@@ -134,12 +126,14 @@ export function IntakeLabPage() {
     };
     raf = requestAnimationFrame(tick);
     return () => cancelAnimationFrame(raf);
-  }, [playing, slowMo, sim]);
+  }, [playing, slowMo, frameCount]);
 
   const update = (patch: Partial<LabState>) => setState((s) => ({ ...s, ...patch }));
   const updateBar = (id: string, patch: Partial<IntakeBar>) => setState((s) => ({ ...s, bars: s.bars.map((b) => (b.id === id ? { ...b, ...patch } : b)) }));
   const updatePiece = (patch: Partial<GamePieceSpec>) =>
     setState((s) => ({ ...s, pieces: s.pieces.map((p) => (p.id === s.pieceId ? { ...p, ...patch } : p)) }));
+  const updateLinkage = (patch: Partial<IntakeLinkage>) => setState((s) => ({ ...s, linkage: { ...s.linkage, ...patch } }));
+  const updateArmDrive = (patch: Partial<IntakeArmDrive>) => setState((s) => ({ ...s, armDrive: { ...s.armDrive, ...patch } }));
   const updateSurface = (id: RollerSurfaceId, patch: Partial<RollerSurfaceSpec>) =>
     setState((s) => ({ ...s, surfaces: s.surfaces.map((x) => (x.id === id ? { ...x, ...patch } : x)) }));
 
@@ -174,7 +168,14 @@ export function IntakeLabPage() {
     setFocusBarId(fresh.bars[0]?.id ?? null);
   }
 
-  const lastFrame = sim.frames[Math.min(frameIndex, sim.frames.length - 1)];
+  const shownTime = frameTimes[Math.min(frameIndex, frameCount - 1)] ?? 0;
+  const armPose = mode === "arm" ? (armMove.frames[Math.min(frameIndex, armMove.frames.length - 1)]?.pose ?? null) : null;
+  const armBadge = !armAnalysis.feasible
+    ? { text: "This linkage can't make the whole move", good: false }
+    : armMove.reached
+      ? { text: `${armDir === "deploy" ? "Deploys" : "Stows"} in ${armMove.timeS.toFixed(2)} s · hits the stop at ${armMove.impactDegPerSec.toFixed(0)}°/s`, good: true }
+      : { text: `Can't ${armDir}: the motor can't beat gravity`, good: false };
+  const badge = mode === "pickup" ? outcome : armBadge;
 
   return (
     <div className="intake-lab">
@@ -188,12 +189,32 @@ export function IntakeLabPage() {
 
       <div className="card il-stage">
         <div className="row-between il-toolbar">
-          <span className={"badge " + (outcome.good ? "good" : "bad")}>{outcome.text}</span>
-          <span className="muted il-stats">
+          <div className="il-modes">
+            <button className={mode === "pickup" ? "active" : ""} onClick={() => setMode("pickup")}>
+              Pick up (rollers)
+            </button>
+            <button className={mode === "arm" ? "active" : ""} onClick={() => setMode("arm")}>
+              Deploy / stow (arm)
+            </button>
+            {mode === "arm" && (
+              <select value={armDir} onChange={(e) => setArmDir(e.target.value === "stow" ? "stow" : "deploy")} aria-label="Arm move" style={{ width: "auto" }}>
+                <option value="deploy">play: deploy</option>
+                <option value="stow">play: stow</option>
+              </select>
+            )}
+          </div>
+          <span className={"badge " + (badge.good ? "good" : "bad")}>{badge.text}</span>
+        </div>
+        {mode === "pickup" ? (
+          <p className="muted il-stats">
             roller motor peak {(sim.peakMotorLoadFraction * 100).toFixed(0)}% of stall · slowest roller {(sim.minRollerSpeedFraction * 100).toFixed(0)}% speed ·
             biggest squeeze {(sim.peakBarForceN * N_TO_LBF).toFixed(0)} lbf
-          </span>
-        </div>
+          </p>
+        ) : (
+          <p className="muted il-stats">
+            dashed colored lines = the path each roller takes from stowed to deployed · dashed gray = stowed · peak current {armMove.peakCurrentA.toFixed(0)} A
+          </p>
+        )}
         <IntakeCanvas
           config={config}
           analysis={analysis}
@@ -203,22 +224,29 @@ export function IntakeLabPage() {
           onMoveBar={(id, xIn, yIn) => updateBar(id, { xIn, yIn })}
           onMovePieceStart={(xIn) => update({ pieceStartXIn: xIn })}
           onDragStateChange={setDragging}
+          mode={mode}
+          arm={{
+            linkage: state.linkage,
+            analysis: armAnalysis,
+            pose: armPose,
+            onMoveJoint: (key, xIn, yIn) => updateLinkage({ [key]: { x: xIn, y: yIn } }),
+          }}
         />
         <div className="il-playback">
-          <button className="primary" onClick={() => (frameIndex >= sim.frames.length - 1 ? (setFrameIndex(0), setPlaying(true)) : setPlaying(!playing))}>
-            {playing ? "Pause" : frameIndex >= sim.frames.length - 1 ? "Replay" : "Play"}
+          <button className="primary" onClick={() => (frameIndex >= frameCount - 1 ? (setFrameIndex(0), setPlaying(true)) : setPlaying(!playing))}>
+            {playing ? "Pause" : frameIndex >= frameCount - 1 ? "Replay" : "Play"}
           </button>
           <input
             type="range"
             min={0}
-            max={Math.max(0, sim.frames.length - 1)}
-            value={Math.min(frameIndex, sim.frames.length - 1)}
+            max={Math.max(0, frameCount - 1)}
+            value={Math.min(frameIndex, frameCount - 1)}
             onChange={(e) => {
               setPlaying(false);
               setFrameIndex(Number(e.target.value));
             }}
           />
-          <span className="muted il-time">{(lastFrame?.t ?? 0).toFixed(2)} s</span>
+          <span className="muted il-time">{shownTime.toFixed(2)} s</span>
           <select value={slowMo} onChange={(e) => setSlowMo(Number(e.target.value))} aria-label="Playback speed">
             <option value={0.1}>0.1× (super slow)</option>
             <option value={0.25}>0.25×</option>
@@ -227,10 +255,24 @@ export function IntakeLabPage() {
           </select>
         </div>
         <p className="hint">
-          Drag a bar to move it. Drag the faint circle on the carpet to change where the piece starts. Red arrows are the forces on the piece. The dashed
-          circle and θ show where the selected bar first touches a piece on the carpet: green dot = it can grab, red dot = it will shove the piece away.
+          {mode === "arm"
+            ? "Drag the square handles A, B, C, D to reshape the linkage: the rollers stay where they are when deployed, only the way the intake gets there changes. Colored dashed lines are each roller's path; gray dashed is the stowed pose. To move rollers, switch back to Pick up."
+            : "Drag a bar to move it. Drag the faint circle on the carpet to change where the piece starts. Red arrows are the forces on the piece. The dashed circle and θ show where the selected bar first touches a piece on the carpet: green dot = it can grab, red dot = it will shove the piece away."}
         </p>
       </div>
+
+      {mode === "arm" && (
+        <ArmPanel
+          linkage={state.linkage}
+          drive={state.armDrive}
+          bars={state.bars}
+          analysis={armAnalysis}
+          deploy={deployMove}
+          stow={stowMove}
+          onLinkage={updateLinkage}
+          onDrive={updateArmDrive}
+        />
+      )}
 
       <div className="card">
         <div className="row-between">
@@ -364,6 +406,8 @@ export function IntakeLabPage() {
         )}
       </div>
 
+      {mode === "pickup" && (
+        <>
       <div className="two-col">
         <div className="card">
           <div className="row-between">
@@ -522,6 +566,9 @@ export function IntakeLabPage() {
           </table>
         </div>
       </div>
+
+        </>
+      )}
 
       <p className="source-note">
         How the simulator works: the piece is a circle with mass, spin and gravity. Where it overlaps the carpet, the bumper or a bar, a stiff spring pushes

@@ -7,3 +7,4 @@ export * from "./flywheel";
 export * from "./climber-stages";
 export * from "./four-bar";
 export * from "./roller-intake";
+export * from "./intake-arm";

@@ -658,3 +658,35 @@ textarea.autogrow {
 .il-math h3 { margin-top: 18px; }
 .il-formula { background: var(--surface-raised); border: 1px solid var(--border); border-left: 4px solid var(--series-1); border-radius: 8px; padding: 10px 12px; overflow-x: auto; font-size: 0.85rem; line-height: 1.5; white-space: pre; }
 .il-callout { background: color-mix(in srgb, var(--series-4) 14%, transparent); border-radius: 8px; padding: 8px 12px; }
+.il-link .il-driver { stroke: var(--series-1); stroke-width: 0.45; stroke-linecap: round; }
+.il-link .il-follower { stroke: var(--text-secondary); stroke-width: 0.35; stroke-linecap: round; }
+.il-link .il-coupler { stroke: var(--series-4); stroke-width: 0.4; stroke-linecap: round; }
+.il-link .il-plate { fill: color-mix(in srgb, var(--series-4) 16%, transparent); stroke: var(--series-4); stroke-width: 0.1; }
+.il-link-faint { opacity: 0.35; }
+.il-link-faint .il-driver, .il-link-faint .il-follower, .il-link-faint .il-coupler { stroke: var(--text-muted); stroke-width: 0.25; }
+.il-link-faint .il-plate { fill: none; stroke: var(--text-muted); stroke-width: 0.08; stroke-dasharray: 0.3 0.2; }
+.il-link-ghost .il-driver, .il-link-ghost .il-follower, .il-link-ghost .il-coupler { stroke: var(--text-muted); stroke-width: 0.15; stroke-dasharray: 0.4 0.25; }
+.il-link-ghost .il-plate { fill: none; stroke: var(--text-muted); stroke-width: 0.08; stroke-dasharray: 0.3 0.2; }
+.il-bar-ghost { fill: none; stroke: var(--text-muted); stroke-width: 0.08; stroke-dasharray: 0.3 0.2; }
+.il-arm-path { fill: none; stroke-width: 0.14; stroke-dasharray: 0.35 0.2; }
+.il-joint { cursor: grab; }
+.il-joint rect { fill: var(--surface-raised); stroke: var(--text-primary); stroke-width: 0.12; }
+.il-joint-moving { fill: var(--surface-raised); stroke: var(--text-primary); stroke-width: 0.1; }
+.il-bar-static { pointer-events: none; }
+.il-modes { display: flex; gap: 6px; }
+.il-modes button.active { background: var(--series-1); border-color: var(--series-1); color: #fff; }
+.il-tiles { display: grid; grid-template-columns: repeat(auto-fit, minmax(170px, 1fr)); gap: 10px; margin: 10px 0 4px; }
+.il-tile { background: var(--surface-raised); border: 1px solid var(--border); border-radius: 8px; padding: 8px 10px; }
+.il-tile .v { font-size: 1.25rem; font-weight: 700; font-variant-numeric: tabular-nums; }
+.il-tile .k { font-size: 0.78rem; color: var(--text-secondary); }
+.il-tile.bad .v { color: var(--status-critical); }
+.il-tile.good .v { color: var(--status-good); }
+.il-chart { width: 100%; height: auto; display: block; }
+.il-chart .grid { stroke: var(--gridline); stroke-width: 1; }
+.il-chart .axis { fill: var(--text-muted); font-size: 11px; }
+.il-chart .line { fill: none; stroke: var(--series-1); stroke-width: 2; }
+.il-chart .limit { stroke: var(--status-critical); stroke-width: 1.5; stroke-dasharray: 6 4; }
+.il-chart .cross { stroke: var(--text-muted); stroke-width: 1; }
+.il-chart .dot { fill: var(--series-1); stroke: var(--surface); stroke-width: 2; }
+.il-chart-tip { position: absolute; pointer-events: none; background: var(--surface-raised); border: 1px solid var(--border); border-radius: 6px; padding: 4px 8px; font-size: 0.8rem; white-space: nowrap; transform: translate(-50%, -110%); }
+.il-chart-wrap { position: relative; }
