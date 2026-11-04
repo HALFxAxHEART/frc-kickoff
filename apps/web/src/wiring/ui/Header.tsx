@@ -160,7 +160,7 @@ export function Header(p: HeaderProps) {
         )}
         <button type="button" onClick={p.onUndo} disabled={!p.canUndo} title="Undo (Ctrl/Cmd+Z)">Undo</button>
         <button type="button" onClick={p.onRedo} disabled={!p.canRedo} title="Redo (Ctrl/Cmd+Shift+Z)">Redo</button>
-        <Menu label="New">
+        <Menu label="New" listClassName="nowrap-menu">
           {(close) => (
             <>
               <button type="button" role="menuitem" onClick={() => { close(); p.onNew('empty'); }}>Empty diagram</button>
@@ -171,7 +171,7 @@ export function Header(p: HeaderProps) {
             </>
           )}
         </Menu>
-        <Menu label={p.team.dirty ? 'Team •' : 'Team'} className={p.team.dirty ? 'team-dirty' : undefined} title="Team diagrams saved on the kickoff server">
+        <Menu label={p.team.dirty ? 'Team •' : 'Team'} className={p.team.dirty ? 'team-dirty' : undefined} title="Team diagrams saved on the kickoff server" listClassName="nowrap-menu">
           {(close) => (
             <>
               <button type="button" role="menuitem" disabled={p.team.busy} onClick={() => { close(); p.team.onSave(); }}>

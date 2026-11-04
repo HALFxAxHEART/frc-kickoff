@@ -403,3 +403,5 @@ button.team-dirty { border-color: #d29922; }
 .team-row-main strong { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 .team-meta { font-size: 12px; opacity: .75; }
 .team-error { color: #cf222e; }
+.nowrap-menu { min-width: max-content; }
+.nowrap-menu button { white-space: nowrap; }
