@@ -11,6 +11,7 @@ const TILES = [
   { to: "/intake-lab", emoji: "🌀", title: "Intake Lab", desc: "Build a roller intake in 2D: drag rollers, pick poly tubes or wheels, add game pieces, and watch whether the piece gets pulled in. Shows all the math." },
   { to: "/design-matrix", emoji: "📐", title: "Robot Design Matrix", desc: "Weigh robot concepts against your own criteria and let the numbers rank them." },
   { to: "/mechanisms", emoji: "⚙️", title: "Mechanism Library", desc: "Intakes, shooters, indexers, climbers — variants, tradeoffs, and real examples." },
+  { to: "/wiring/", emoji: "🔌", title: "5090 Wiring", desc: "Draw the robot's wiring (power, CAN, network) with real device icons and ports, check it for mistakes, and save it for the whole team. Starts from the 5090 standard robot. Built on Team 2102's Paradox Diagram." },
   { to: "/concepts", emoji: "🗂️", title: "Concepts", desc: "Save named robot concepts that bundle a design-matrix result and cycle-time scenarios." },
 ];
 
@@ -28,7 +29,7 @@ export function DashboardPage() {
       </p>
       <div className="card-grid" style={{ marginTop: 20 }}>
         {TILES.map((tile) => (
-          <Link key={tile.to} to={tile.to} className="tile-link">
+          <Link key={tile.to} to={tile.to} className="tile-link" reloadDocument={tile.to.startsWith("/wiring")}>
             <div className="card">
               <div className="tile-emoji">{tile.emoji}</div>
               <h3>{tile.title}</h3>

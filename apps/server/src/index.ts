@@ -8,6 +8,18 @@ const logger = createLogger("server");
 
 const WEB_DIST = new URL("../../web/dist", import.meta.url).pathname;
 
+// The 5090 Wiring editor is its own page under /wiring/ (wiring/index.html). Its icons are fetched
+// by relative URL, so the page must be opened with the trailing slash.
+async function serveWiring(pathname: string): Promise<Response> {
+  const file = Bun.file(`${WEB_DIST}${pathname}`);
+  if (pathname !== "/wiring/" && (await file.exists())) return new Response(file);
+  // A missing file (an icon, the catalog) is a real 404, never the HTML page.
+  if (/\.[a-z0-9]+$/i.test(pathname)) return new Response("Not found", { status: 404 });
+  const page = Bun.file(`${WEB_DIST}/wiring/index.html`);
+  if (await page.exists()) return new Response(page);
+  return new Response("Not found", { status: 404 });
+}
+
 async function serveStatic(pathname: string): Promise<Response> {
   const filePath = pathname === "/" ? "/index.html" : pathname;
   const file = Bun.file(`${WEB_DIST}${filePath}`);
@@ -37,6 +49,13 @@ const server = Bun.serve({
         router: appRouter,
         createContext,
       });
+    }
+
+    if (url.pathname === "/wiring") {
+      return Response.redirect(`${url.origin}/wiring/${url.search}`, 301);
+    }
+    if (url.pathname.startsWith("/wiring/")) {
+      return serveWiring(url.pathname);
     }
 
     return serveStatic(url.pathname);

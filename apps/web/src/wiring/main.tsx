@@ -1,0 +1,24 @@
+import { StrictMode } from 'react';
+import { createRoot } from 'react-dom/client';
+import '@fontsource/barlow/400.css';
+import '@fontsource/barlow/500.css';
+import '@fontsource/barlow/600.css';
+import '@fontsource/barlow-semi-condensed/600.css';
+import '@fontsource/jetbrains-mono/400.css';
+import './ui/styles.css';
+import { App } from './ui/App';
+import { Gallery } from './ui/Gallery';
+import { applyTheme, readTheme } from './ui/theme';
+
+// the saved theme before the first paint, so a dark page never flashes white
+applyTheme(readTheme());
+
+// Two pages under /wiring/: the editor, and the icon gallery at /wiring/gallery.
+const path = window.location.pathname;
+const page = /\/gallery$/.test(path) ? <Gallery /> : <App />;
+
+createRoot(document.getElementById('root')!).render(
+  <StrictMode>
+    {page}
+  </StrictMode>,
+);

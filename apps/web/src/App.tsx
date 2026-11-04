@@ -40,6 +40,8 @@ export function App() {
             {link.label}
           </NavLink>
         ))}
+        {/* The wiring editor is its own page (not a client route), so it gets a full page load. */}
+        <a href="/wiring/" className="nav-link">Wiring</a>
       </nav>
       <main className="app-main">
         <Routes>
