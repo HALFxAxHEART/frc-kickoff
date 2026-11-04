@@ -34,7 +34,8 @@ export const wiringRouter = router({
         name: schema.wiringDiagrams.name,
         updatedBy: schema.wiringDiagrams.updatedBy,
         updatedAt: schema.wiringDiagrams.updatedAt,
-        devices: sql<number>`coalesce(jsonb_array_length(${schema.wiringDiagrams.doc}->'devices'), 0)`.mapWith(Number),
+        // The bun-sql driver can store the document as a JSON string inside jsonb, so read through it either way.
+        devices: sql<number>`coalesce(jsonb_array_length(case jsonb_typeof(${schema.wiringDiagrams.doc}) when 'string' then (${schema.wiringDiagrams.doc} #>> '{}')::jsonb else ${schema.wiringDiagrams.doc} end -> 'devices'), 0)`.mapWith(Number),
       })
       .from(schema.wiringDiagrams)
       .orderBy(desc(schema.wiringDiagrams.updatedAt));

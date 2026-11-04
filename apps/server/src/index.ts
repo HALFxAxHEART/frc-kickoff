@@ -52,7 +52,8 @@ const server = Bun.serve({
     }
 
     if (url.pathname === "/wiring") {
-      return Response.redirect(`${url.origin}/wiring/${url.search}`, 301);
+      // relative Location: behind the HTTPS proxy, url.origin is http://
+      return new Response(null, { status: 301, headers: { Location: `/wiring/${url.search}` } });
     }
     if (url.pathname.startsWith("/wiring/")) {
       return serveWiring(url.pathname);
